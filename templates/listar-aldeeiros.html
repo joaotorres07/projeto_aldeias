@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+    <head>
+        <meta charset="UTF-8">
+        <title>Listar Aldeeiros</title>
+        <style>
+            body {
+                font-family: Arial, Helvetica, sans-serif;
+                background-color: #f4f6f8;
+                padding: 30px;
+            }
+
+            h2 {
+                margin-bottom: 20px;
+            }
+
+            .filtros {
+                background: #ffffff;
+                padding: 15px;
+                border-radius: 6px;
+                margin-bottom: 20px;
+                box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+            }
+
+            .filtros label {
+                display: block;
+                margin-top: 10px;
+            }
+
+            .filtros input,
+            .filtros select {
+                width: 250px;
+                padding: 6px;
+                margin-top: 5px;
+            }
+
+            .filtros button {
+                margin-top: 15px;
+                padding: 8px 18px;
+                background-color: #3498db;
+                border: none;
+                color: white;
+                border-radius: 4px;
+                cursor: pointer;
+            }
+
+            table {
+                border-collapse: collapse;
+                width: 100%;
+                background: #ffffff;
+            }
+
+            th, td {
+                border: 1px solid #ddd;
+                padding: 8px;
+                vertical-align: top;
+            }
+
+            th {
+                background-color: #f0f0f0;
+            }
+
+            ul {
+                padding-left: 18px;
+                margin: 0;
+            }
+        </style>
+    </head>
+    <body>
+        <h2>Listagem de Aldeeiros</h2>
+
+        <form method="GET" action="/pesquisarAldeeiros">
+            <div class="filtros">
+                <label>Nome</label>
+                <input type="text" name="nome" value="{{ request.args.get('nome','') }}">
+
+                <label>Núcleo</label>
+                <select name="nucleo">
+                    <option value="">Todos</option>
+                    {% for nucleo in nucleos %}
+                        <option value="{{ nucleo.id }}"
+                            {% if request.args.get('nucleo') == nucleo.id|string %}selected{% endif %}>
+                            {{ nucleo.nome }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <br>
+
+                <button type="submit">🔍 Pesquisar</button>
+                <a href="/init-aldeias">Voltar ao início</a>
+            </div>
+        </form>
+
+        {% if aldeeiros %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Núcleo</th>
+                    <th>Equipes</th>
+                    <th>Aldeias que fez</th>
+                    <th>Aldeias que serviu</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in aldeeiros %}
+                <tr>
+                    <td>{{ a.nome_aldeeiro }}</td>
+                    <td>{{ a.nucleo }}</td>
+                    <td>
+                        <ul>
+                            {% for e in a.equipes %}
+                                <li>{{ e }}</li>
+                            {% endfor %}
+                        </ul>
+                    </td>
+
+                    <td>
+                        <ul>
+                            {% for al in a.aldeias_fez %}
+                                <li>{{ al }}</li>
+                            {% endfor %}
+                        </ul>
+                    </td>
+
+                    <td>
+                        <ul>
+                            {% for al in a.aldeias_serviu %}
+                                <li>{{ al }}</li>
+                            {% endfor %}
+                        </ul>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+            <p>Nenhum registro encontrado.</p>
+        {% endif %}
+    </body>
+</html>

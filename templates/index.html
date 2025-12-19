@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+    <head>
+        <meta charset="UTF-8">
+        <title>Aldeias - Teste</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 40px;
+            }
+            button {
+                padding: 10px 20px;
+                margin: 5px;
+                cursor: pointer;
+            }
+            .response {
+                margin-top: 20px;
+                font-weight: bold;
+                color: green;
+            }
+        </style>
+    </head>
+    <body>
+        <h2>Menu</h2>
+        <a href="/aldeeiro/form">
+            <button>Criar / Atualizar Aldeeiro</button>
+        </a>
+        <a href="/aldeeiro/listar">
+            <button>Listar Aldeeiros</button>
+        </a>
+        {% if response %}
+        <div class="response">
+            {{ response }}
+        </div>
+        {% endif %}
+    </body>
+</html>

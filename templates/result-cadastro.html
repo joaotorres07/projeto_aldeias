@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+    <head>
+        <meta charset="UTF-8">
+        <title>Resultado do Cadastro</title>
+        <style>
+            body {
+                font-family: Arial, Helvetica, sans-serif;
+                background-color: #f4f6f8;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+            }
+
+            .box {
+                background: #fff;
+                padding: 30px;
+                width: 420px;
+                border-radius: 8px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+                text-align: center;
+            }
+
+            .success {
+                border-left: 6px solid #2ecc71;
+            }
+
+            .error {
+                border-left: 6px solid #e74c3c;
+            }
+
+            h2 {
+                margin-bottom: 15px;
+            }
+
+            .success h2 {
+                color: #2ecc71;
+            }
+
+            .error h2 {
+                color: #e74c3c;
+            }
+
+            p {
+                font-size: 16px;
+                margin-bottom: 20px;
+            }
+
+            .code {
+                font-size: 14px;
+                color: #666;
+                margin-bottom: 25px;
+            }
+
+            a {
+                display: inline-block;
+                text-decoration: none;
+                padding: 10px 18px;
+                border-radius: 4px;
+                color: #fff;
+                background-color: #3498db;
+                margin: 5px;
+            }
+
+            a:hover {
+                background-color: #2980b9;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="box {{ status }}">
+            {% if status == "success" %}
+                <h2>✅ Operação realizada com sucesso</h2>
+            {% else %}
+                <h2>❌ Erro ao processar a solicitação</h2>
+            {% endif %}
+            <p>{{ message }}</p>
+            <div class="code">
+                Status Code: {{ status_code }}
+            </div>
+            <a href="/init-aldeias">Voltar ao início</a>
+            <a href="/aldeeiro/form">Novo cadastro</a>
+        </div>
+    </body>
+</html>

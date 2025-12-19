@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="description" content="Formulário de cadastro das aldeias de vida."/>
+        <meta http-equiv="content-language" content="pt-br" />
+
+        <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+        <link rel="stylesheet" href="{{ url_for('static', filename='reset.css')}}">
+        <link rel="stylesheet" href="{{ url_for('static', filename='fonts-icones.css')}}">
+
+        <title>Cadastro Aldeeiro(a)</title>
+    </head>
+
+    <script>
+        function toggleServiu(checkbox) {
+            const bloco = document.getElementById('bloco-serviu');
+            if (checkbox.checked) {
+                bloco.style.display = 'block';
+            } else {
+                bloco.style.display = 'none';
+            }
+        }
+
+        function mascaraTelefone(campo) {
+            let valor = campo.value.replace(/\D/g, ""); // só números
+            valor = valor.substring(0, 14);
+            if (valor.length === 0) {
+                campo.value = "";
+                return;
+            }
+            if (valor.length < 3) {
+                campo.value = "(" + valor;
+                return;
+            }
+            if (valor.length < 7) {
+                campo.value = "(" + valor.substring(0, 2) + ") " + valor.substring(2);
+                return;
+            }
+            if (valor.length < 11) {
+                campo.value = "(" + valor.substring(0, 2) + ") " +
+                    valor.substring(2, 3) + " " + valor.substring(3);
+                return;
+            }
+
+            campo.value = "(" + valor.substring(0, 2) + ") " +
+                valor.substring(2, 3) + " " + valor.substring(3, 7) + "-" + valor.substring(7, 11);
+        }
+
+        function mascaraCPF(campo) {
+            let valor = campo.value.replace(/\D/g, '');
+            valor = valor.substring(0, 14);
+            valor = valor.replace(/(\d{3})(\d)/, "$1.$2");
+            valor = valor.replace(/(\d{3})(\d)/, "$1.$2");
+            valor = valor.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+            campo.value = valor;
+            document.getElementById('cpf').value = numeros;
+        }
+
+        function removerNumeros(campo) {
+            campo.value = campo.value.replace(/[0-9]/g, '');
+        }
+    </script>
+
+    <body>
+        <header class="main_header container">
+            <div class="content">
+                <div class="main_header_logo">
+                    <img src="img/logo_aldeias.jpg" alt="logo_aldeias.jpg" title="Aldeias de Vida"/>
+                </div>
+            </div>
+        </header>
+
+        <main class="main_content container">
+            <section class="section-seu-codigo container">
+                <div class="content">
+                    <div class="box-artigo">
+                        <div class="container_form">
+                            <h1>Formulário de cadastro</h1>
+                            <form class="form" method="post" action="/salvar_atualizar_aldeeiro">
+                                <div class="form_grupo"><label for="nome" class="form_label">Nome</label>
+                                    <input type="text" name="nome" class="form_input" id="nome" required pattern="[A-Za-zÀ-ÿ\s]+"
+                                           title="Informe somente letras" oninput="removerNumeros(this)">
+                                </div>
+
+                                <div class="form_grupo">
+                                    <label for="cpf" class="form_label">CPF</label>
+                                    <input type="text" class="form_input" name="cpf" id="cpf" pattern="[0-9]+" maxlength="14" placeholder="000.000.000-00"
+                                           required inputmode="numeric" title="Informe somente números" >
+                                </div>
+
+                                <div class="form_grupo">
+                                    <label for="data_nascimento" class="form_label">Data de Nascimento</label>
+                                    <input type="date" name="data_nascimento" class="form_input" id="data_nascimento" placeholder="Data de Nascimento" required>
+                                </div>
+
+                                <div class="form_grupo">
+                                    <label for="telefone" class="form_label">Telefone</label>
+                                    <input type="text" id="telefone" name="telefone" class="form_input"  placeholder="(99) 9 9999-9999" required
+                                        inputmode="numeric" title="Digite somente números. Mínimo de 9 dígitos." pattern="[0-9]+">
+                                </div>
+
+                                <div class="form_grupo">
+                                    <label for="email" class="form_label">Email</label>
+                                    <input type="email" name="email" class="form_input" id="email" placeholder="seuemail@email.com" required>
+                                </div>
+
+                                <label>Núcleo</label><br>
+                                <select name="nucleo" required class="form_input">
+                                    <option value="">Selecione</option>
+                                    {% for nucleo in nucleos %}
+                                        <option value="{{ nucleo.id }}">{{ nucleo.nome }}</option>
+                                    {% endfor %}
+                                </select>
+
+                                <label>Aldeias que já fez</label><br>
+                                <select name="aldeias_fez" multiple size="{{ aldeias_fez.length }}" class="form_input">
+                                    {% for aldeia in aldeias_fez %}
+                                        <option value="{{ aldeia.id }}">{{ aldeia.nome_aldeia }}</option>
+                                    {% endfor %}
+                                </select>
+
+                                <div class="form_grupo">
+                                    <label for="chk_serviu" class="form_label check_label">
+                                        Já serviu em alguma aldeia?
+                                        <input type="checkbox" class="form_input" id="chk_serviu" name="serviu" value="true" onchange="toggleServiu(this)">
+                                    </label>
+                                </div>
+
+                                <div id="bloco-serviu" style="display: none;">
+                                    <div class="form_grupo">
+                                        <label for="aldeias_serviu" class="form_label">Aldeias que já serviu</label><br>
+                                        <select name="aldeias_serviu" id="aldeias_serviu" multiple size="{{ aldeias_serviu|length }}">
+                                            {% for aldeia in aldeias_serviu %}
+                                                <option value="{{ aldeia.id }}">{{ aldeia.nome_aldeia }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+
+                                    <div class="form_grupo">
+                                        <label for="equipes" class="form_label">Equipes que Serviu</label><br>
+                                        <select name="equipes" id="equipes" multiple size="{{ equipes|length }}">
+                                            {% for equipe in equipes %}
+                                                <option value="{{ equipe.id }}">{{ equipe.nome }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="submit">
+                                    <input type="hidden" name="acao" value="enviar">
+                                    <button type="submit" name="Submit" class="submit_btn">Salvar</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="clear"></div>
+                </div>
+            </section>
+        </main>
+        <footer class="main_footer container">
+            <div class="main_footer_copy">
+                <p class="m-b-footer"> Aldeias de Vida - 2026, todos os direitos reservados.</p>
+                <p class="by"><i class="icon icon-heart-3"></i> Desenvolvido por: aldeeiros</p>
+            </div>
+        </footer>
+    </body>
+</html>
