@@ -49,11 +49,12 @@ def get_db_connection():
 def insert_update_user(body):
     connection = get_db_connection()
     try:
+        ja_serviu = body["serviu"][0]
         with connection.cursor() as cursor:
             sql = """
                   INSERT INTO db_aldeias.tb_aldeeiro
-                    (nome, cpf, data_nascimento, telefone, email, nucleo, data_insert, ativo)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                    (nome, cpf, data_nascimento, telefone, email, nucleo, ja_serviu, data_insert, ativo)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                 ON DUPLICATE KEY UPDATE
                     telefone = VALUES(telefone),
                     email = VALUES(email),
@@ -69,21 +70,22 @@ def insert_update_user(body):
                 body["telefone"],
                 body["email"],
                 body["nucleo"],
+                1 if ja_serviu == 'true' else 0,
                 now,  # data_insert
                 1,  # ativo
-                now  # data_update (somente no update)
+                now # data_update (somente no update)
             )
             cursor.execute(sql, values)
         connection.commit()
 
         if body.get("aldeias_fez") is not None and body.get("aldeias_fez") != []:
             insert_aldeias_fez(connection, connection.cursor(), body["cpf"], body.get("aldeias_fez"))
+        if ja_serviu == 'true':
+            if body.get("aldeias_serviu") is not None and body.get("aldeias_serviu") != []:
+                insert_aldeias_serviu(connection, connection.cursor(), body["cpf"], body.get("aldeias_serviu"))
 
-        if body.get("aldeias_serviu") is not None and body.get("aldeias_serviu") != []:
-            insert_aldeias_serviu(connection, connection.cursor(), body["cpf"], body.get("aldeias_serviu"))
-
-        if body.get("equipes") is not None and body.get("equipes") != []:
-            insert_equipes(connection, connection.cursor(), body["cpf"], body.get("equipes"))
+            if body.get("equipes") is not None and body.get("equipes") != []:
+                insert_equipes(connection, connection.cursor(), body["cpf"], body.get("equipes"))
 
         logger.info("User inserted/updated successfully.")
     except Exception as e:
