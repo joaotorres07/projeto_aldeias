@@ -103,6 +103,11 @@ CREATE TABLE `tb_frequencia_aldeeiro` (
   CONSTRAINT `fk_freq_formacao` FOREIGN KEY (`id_formacao`) REFERENCES `tb_formacao` (`id`) ON DELETE CASCADE
 );
 
+ALTER TABLE db_aldeias.tb_aldeeiro
+ADD COLUMN sexo CHAR(1) NOT NULL
+CHECK (sexo IN ('F', 'M'))
+AFTER `data_nascimento`;
+
 -- INSERTS INICIAIS
 
 INSERT INTO `tb_nucleo` VALUES (1,'Belo Horizonte'),(2,'Campo Belo'),(3,'Lavras'),(4,'Alfenas'),(5,'Perdões');

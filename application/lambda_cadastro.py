@@ -57,8 +57,8 @@ def insert_update_user(body):
         with connection.cursor() as cursor:
             sql = """
                   INSERT INTO db_aldeias.tb_aldeeiro
-                    (nome, cpf, data_nascimento, telefone, email, nucleo, ja_serviu, data_insert, ativo)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    (nome, cpf, data_nascimento, sexo, telefone, email, nucleo, ja_serviu, data_insert, ativo)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 ON DUPLICATE KEY UPDATE
                     telefone = VALUES(telefone),
                     email = VALUES(email),
@@ -71,6 +71,7 @@ def insert_update_user(body):
                 body["nome"],
                 body["cpf"],
                 body["data_nascimento"],  # formato YYYY-MM-DD
+                body["sexo"],
                 body["telefone"],
                 body["email"],
                 body["nucleo"],
