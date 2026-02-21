@@ -8,6 +8,10 @@ from application.lambda_get_dados import decimal_serializer
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+log_format = logging.StreamHandler()
+log_format.setFormatter(formatter)
+logger.addHandler(log_format)
 
 
 def lambda_handler(event, context):
