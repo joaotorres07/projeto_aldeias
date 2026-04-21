@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Confirmar Código - Aldeias{% endblock %}
+{% block content_no_auth %}
+<div class="container d-flex justify-content-center align-items-center" style="min-height: 100vh;">
+    <div class="card p-4" style="width: 420px;">
+        <div class="text-center mb-4">
+            <i class="bi bi-shield-lock-fill" style="font-size: 3rem; color: #5a67d8;"></i>
+            <h3 class="mt-2">Confirmar Código</h3>
+            <p class="text-muted">Digite o código enviado para <strong>{{ email }}</strong> e defina sua nova senha</p>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="/confirmar-codigo">
+            <input type="hidden" name="email" value="{{ email }}">
+            <div class="mb-3">
+                <label for="codigo" class="form-label">Código de Verificação</label>
+                <input type="text" class="form-control text-center fs-4" id="codigo" name="codigo" required
+                       maxlength="6" placeholder="000000" style="letter-spacing: 8px;" autocomplete="off">
+                <small class="text-muted">Código de 6 dígitos válido por 10 minutos</small>
+            </div>
+            <div class="mb-3">
+                <label for="nova_senha" class="form-label">Nova Senha</label>
+                <input type="password" class="form-control" id="nova_senha" name="nova_senha" required minlength="6" placeholder="Mínimo 6 caracteres">
+            </div>
+            <div class="mb-3">
+                <label for="confirmar_senha" class="form-label">Confirmar Nova Senha</label>
+                <input type="password" class="form-control" id="confirmar_senha" name="confirmar_senha" required placeholder="Repita a nova senha">
+            </div>
+            <button type="submit" class="btn btn-primary w-100 mb-3"><i class="bi bi-check-lg"></i> Alterar Senha</button>
+        </form>
+        <div class="text-center">
+            <a href="/recuperar-senha" class="text-decoration-none">Reenviar código</a>
+            <span class="mx-2">|</span>
+            <a href="/login" class="text-decoration-none">Voltar ao login</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

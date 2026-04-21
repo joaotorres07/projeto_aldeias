@@ -20,7 +20,9 @@
             <div class="col-md-3">
                 <label for="cpf" class="form-label">CPF</label>
                 <input type="text" class="form-control" id="cpf" name="cpf" required maxlength="14" placeholder="000.000.000-00"
-                       value="{{ aldeeiro.cpf if aldeeiro else '' }}" {{ 'readonly' if aldeeiro }}>
+                       value="{{ '%s.%s.%s-%s' % (aldeeiro.cpf[:3], aldeeiro.cpf[3:6], aldeeiro.cpf[6:9], aldeeiro.cpf[9:]) if aldeeiro and aldeeiro.cpf and aldeeiro.cpf|length >= 11 else (aldeeiro.cpf if aldeeiro else '') }}"
+                       oninput="mascaraCPF(this)" {{ 'readonly' if aldeeiro }}>
+                <div class="invalid-feedback" id="cpf-feedback"></div>
             </div>
             <div class="col-md-3">
                 <label for="data_nascimento" class="form-label">Data de Nascimento</label>
@@ -37,8 +39,9 @@
             </div>
             <div class="col-md-3">
                 <label for="telefone" class="form-label">Telefone</label>
-                <input type="text" class="form-control" id="telefone" name="telefone" required placeholder="(00) 00000-0000"
-                       value="{{ aldeeiro.telefone if aldeeiro else '' }}">
+                <input type="text" class="form-control" id="telefone" name="telefone" required maxlength="14" placeholder="(00)00000-0000"
+                       value="{{ '(%s)%s-%s' % (aldeeiro.telefone[:2], aldeeiro.telefone[2:7], aldeeiro.telefone[7:]) if aldeeiro and aldeeiro.telefone and aldeeiro.telefone|length >= 10 else (aldeeiro.telefone if aldeeiro else '') }}"
+                       oninput="mascaraTelefone(this)">
             </div>
             <div class="col-md-4">
                 <label for="email_display" class="form-label">Email</label>
@@ -56,13 +59,35 @@
                 </select>
             </div>
             <div class="col-md-12">
-                <label for="aldeias_fez" class="form-label">Aldeias que fez</label>
-                <select class="form-select" id="aldeias_fez" name="aldeias_fez" multiple size="5">
-                    {% for a in aldeias_fez %}
-                        <option value="{{ a.id }}" {{ 'selected' if a.id in aldeeiro_aldeias_fez_ids }}>{{ a.nome_aldeia }}</option>
-                    {% endfor %}
-                </select>
-                <small class="text-muted">Segure Ctrl para selecionar múltiplas</small>
+                <label class="form-label">Aldeias que fez</label>
+                <div class="row">
+                    <div class="col-md-5">
+                        <label class="form-label text-muted small">Disponíveis</label>
+                        <select class="form-select" id="aldeias_fez_disponiveis" multiple size="5">
+                            {% for a in aldeias_fez %}
+                                {% if a.id not in aldeeiro_aldeias_fez_ids %}
+                                <option value="{{ a.id }}">{{ a.nome_aldeia }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex flex-column justify-content-center align-items-center gap-2">
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="moverSelecionados('aldeias_fez_disponiveis','aldeias_fez')"><i class="bi bi-chevron-right"></i></button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="moverTodos('aldeias_fez_disponiveis','aldeias_fez')"><i class="bi bi-chevron-double-right"></i></button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="moverSelecionados('aldeias_fez','aldeias_fez_disponiveis')"><i class="bi bi-chevron-left"></i></button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="moverTodos('aldeias_fez','aldeias_fez_disponiveis')"><i class="bi bi-chevron-double-left"></i></button>
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label text-muted small">Selecionadas</label>
+                        <select class="form-select duo-selecionados" id="aldeias_fez" name="aldeias_fez" multiple size="5">
+                            {% for a in aldeias_fez %}
+                                {% if a.id in aldeeiro_aldeias_fez_ids %}
+                                <option value="{{ a.id }}">{{ a.nome_aldeia }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
             </div>
             <div class="col-md-12">
                 <div class="form-check">
@@ -73,20 +98,62 @@
                 <input type="hidden" name="serviu" id="serviu_value" value="{{ 'true' if aldeeiro and aldeeiro.ja_serviu else 'false' }}">
             </div>
             <div class="col-md-6" id="div_aldeias_serviu" style="{{ '' if aldeeiro and aldeeiro.ja_serviu else 'display:none;' }}">
-                <label for="aldeias_serviu" class="form-label">Aldeias que serviu</label>
-                <select class="form-select" id="aldeias_serviu" name="aldeias_serviu" multiple size="5">
-                    {% for a in aldeias_serviu %}
-                        <option value="{{ a.id }}" {{ 'selected' if a.id in aldeeiro_aldeias_serviu_ids }}>{{ a.nome_aldeia }}</option>
-                    {% endfor %}
-                </select>
+                <label class="form-label">Aldeias que serviu</label>
+                <div class="row">
+                    <div class="col-5">
+                        <label class="form-label text-muted small">Disponíveis</label>
+                        <select class="form-select" id="aldeias_serviu_disponiveis" multiple size="5">
+                            {% for a in aldeias_serviu %}
+                                {% if a.id not in aldeeiro_aldeias_serviu_ids %}
+                                <option value="{{ a.id }}">{{ a.nome_aldeia }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-2 d-flex flex-column justify-content-center align-items-center gap-1">
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="moverSelecionados('aldeias_serviu_disponiveis','aldeias_serviu')"><i class="bi bi-chevron-right"></i></button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="moverSelecionados('aldeias_serviu','aldeias_serviu_disponiveis')"><i class="bi bi-chevron-left"></i></button>
+                    </div>
+                    <div class="col-5">
+                        <label class="form-label text-muted small">Selecionadas</label>
+                        <select class="form-select duo-selecionados" id="aldeias_serviu" name="aldeias_serviu" multiple size="5">
+                            {% for a in aldeias_serviu %}
+                                {% if a.id in aldeeiro_aldeias_serviu_ids %}
+                                <option value="{{ a.id }}">{{ a.nome_aldeia }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
             </div>
             <div class="col-md-6" id="div_equipes" style="{{ '' if aldeeiro and aldeeiro.ja_serviu else 'display:none;' }}">
-                <label for="equipes" class="form-label">Equipes que participou</label>
-                <select class="form-select" id="equipes" name="equipes" multiple size="5">
-                    {% for e in equipes %}
-                        <option value="{{ e.id }}" {{ 'selected' if e.id in aldeeiro_equipes_ids }}>{{ e.nome }}</option>
-                    {% endfor %}
-                </select>
+                <label class="form-label">Equipes que participou</label>
+                <div class="row">
+                    <div class="col-5">
+                        <label class="form-label text-muted small">Disponíveis</label>
+                        <select class="form-select" id="equipes_disponiveis" multiple size="5">
+                            {% for e in equipes %}
+                                {% if e.id not in aldeeiro_equipes_ids %}
+                                <option value="{{ e.id }}">{{ e.nome }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-2 d-flex flex-column justify-content-center align-items-center gap-1">
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="moverSelecionados('equipes_disponiveis','equipes')"><i class="bi bi-chevron-right"></i></button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="moverSelecionados('equipes','equipes_disponiveis')"><i class="bi bi-chevron-left"></i></button>
+                    </div>
+                    <div class="col-5">
+                        <label class="form-label text-muted small">Selecionadas</label>
+                        <select class="form-select duo-selecionados" id="equipes" name="equipes" multiple size="5">
+                            {% for e in equipes %}
+                                {% if e.id in aldeeiro_equipes_ids %}
+                                <option value="{{ e.id }}">{{ e.nome }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
             </div>
         </div>
         <div class="mt-4">
@@ -105,5 +172,94 @@ function toggleServiu() {
     document.getElementById('div_aldeias_serviu').style.display = checked ? '' : 'none';
     document.getElementById('div_equipes').style.display = checked ? '' : 'none';
 }
+
+function mascaraCPF(campo) {
+    let v = campo.value.replace(/\D/g, '').substring(0, 11);
+    if (v.length > 9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
+    else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
+    else if (v.length > 3) v = v.replace(/(\d{3})(\d{1,3})/, '$1.$2');
+    campo.value = v;
+    validarCPFVisual(campo);
+}
+
+function mascaraTelefone(campo) {
+    let v = campo.value.replace(/\D/g, '').substring(0, 11);
+    if (v.length > 6) v = v.replace(/(\d{2})(\d{5})(\d{1,4})/, '($1)$2-$3');
+    else if (v.length > 2) v = v.replace(/(\d{2})(\d{1,5})/, '($1)$2');
+    else if (v.length > 0) v = v.replace(/(\d{1,2})/, '($1');
+    campo.value = v;
+}
+
+function validarCPF(cpf) {
+    cpf = cpf.replace(/\D/g, '');
+    if (cpf.length !== 11) return false;
+    if (/^(\d)\1{10}$/.test(cpf)) return false;
+
+    let soma = 0;
+    for (let i = 0; i < 9; i++) soma += parseInt(cpf.charAt(i)) * (10 - i);
+    let resto = (soma * 10) % 11;
+    if (resto === 10) resto = 0;
+    if (resto !== parseInt(cpf.charAt(9))) return false;
+
+    soma = 0;
+    for (let i = 0; i < 10; i++) soma += parseInt(cpf.charAt(i)) * (11 - i);
+    resto = (soma * 10) % 11;
+    if (resto === 10) resto = 0;
+    if (resto !== parseInt(cpf.charAt(10))) return false;
+
+    return true;
+}
+
+function validarCPFVisual(campo) {
+    const cpf = campo.value.replace(/\D/g, '');
+    const feedback = document.getElementById('cpf-feedback');
+    if (cpf.length < 11) {
+        campo.classList.remove('is-valid', 'is-invalid');
+        feedback.textContent = '';
+        return;
+    }
+    if (validarCPF(cpf)) {
+        campo.classList.remove('is-invalid');
+        campo.classList.add('is-valid');
+        feedback.textContent = '';
+    } else {
+        campo.classList.remove('is-valid');
+        campo.classList.add('is-invalid');
+        feedback.textContent = 'CPF inválido.';
+    }
+}
+
+function moverSelecionados(origemId, destinoId) {
+    const origem = document.getElementById(origemId);
+    const destino = document.getElementById(destinoId);
+    const selecionados = Array.from(origem.selectedOptions);
+    selecionados.forEach(opt => destino.appendChild(opt));
+}
+
+function moverTodos(origemId, destinoId) {
+    const origem = document.getElementById(origemId);
+    const destino = document.getElementById(destinoId);
+    Array.from(origem.options).forEach(opt => destino.appendChild(opt));
+}
+
+document.querySelector('form[action="/salvar_atualizar_aldeeiro"]').addEventListener('submit', function(e) {
+    var cpf = document.getElementById('cpf');
+    if (!validarCPF(cpf.value)) {
+        e.preventDefault();
+        cpf.classList.add('is-invalid');
+        document.getElementById('cpf-feedback').textContent = 'CPF inválido.';
+        cpf.focus();
+        return false;
+    }
+    cpf.readOnly = false;
+    cpf.value = cpf.value.replace(/\D/g, '');
+    var tel = document.getElementById('telefone');
+    tel.value = tel.value.replace(/\D/g, '');
+
+    // Selecionar todos os itens do lado direito para enviar no form
+    document.querySelectorAll('.duo-selecionados').forEach(function(sel) {
+        Array.from(sel.options).forEach(function(opt) { opt.selected = true; });
+    });
+});
 </script>
 {% endblock %}

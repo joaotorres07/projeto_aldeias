@@ -55,7 +55,6 @@ def registrar_presenca(body):
     try:
         with connection.cursor() as cursor:
             sql = " INSERT INTO db_aldeias.tb_frequencia_aldeeiro (cpf_aldeeiro, id_formacao, presente, data_registro) VALUES (%s, %s, %s, %s) "
-
             values = (
                 body['cpf'],
                 body['id_formacao'],

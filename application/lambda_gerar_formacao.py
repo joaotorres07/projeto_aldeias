@@ -51,8 +51,15 @@ def insert_formacao(nucleo, tema, data_formacao):
         connection.commit()
 
         logger.info("Formação aberta com sucesso.")
+    except pymysql.err.IntegrityError as e:
+        if e.args[0] == 1062:
+            msg_error = "Já existe uma formação com esse tema nesse núcleo na data de hoje."
+        else:
+            msg_error = f"Erro ao abrir formação: {str(e)}"
+        logger.error(msg_error)
+        raise Exception(msg_error)
     except Exception as e:
-        msg_error = f"Error ao abrir formação: Data: {data_formacao} Nucleo: {nucleo} | Exception: {str(e)}"
+        msg_error = f"Erro ao abrir formação: Data: {data_formacao} Nucleo: {nucleo} | Exception: {str(e)}"
         logger.error(msg_error)
         raise Exception(msg_error)
     finally:

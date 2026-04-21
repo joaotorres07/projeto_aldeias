@@ -61,11 +61,9 @@ def get_db_connection():
 
 def select_equipes():
     connection = get_db_connection()
-    resultados = []
     try:
         with connection.cursor() as cursor:
             sql = """ SELECT id, nome FROM db_aldeias.tb_equipes """
-
             cursor.execute(sql)
             resultados = cursor.fetchall()
     except Exception as e:
@@ -80,11 +78,9 @@ def select_equipes():
 
 def select_aldeias():
     connection = get_db_connection()
-    resultados = []
     try:
         with connection.cursor() as cursor:
             sql = """ SELECT * FROM db_aldeias.tb_aldeia """
-
             cursor.execute(sql)
             resultados = cursor.fetchall()
     except Exception as e:
@@ -99,11 +95,9 @@ def select_aldeias():
 
 def select_nucleos():
     connection = get_db_connection()
-    resultados = []
     try:
         with connection.cursor() as cursor:
             sql = """ SELECT * FROM db_aldeias.tb_nucleo """
-
             cursor.execute(sql)
             resultados = cursor.fetchall()
     except Exception as e:

@@ -29,10 +29,7 @@ def lambda_handler(event, context):
                 "body": json.dumps({"error": "Mensagem ou template não fornecido"})
             }
 
-        # Busca todos os números de telefone
         numeros = obter_numeros_telefone()
-
-        # Envia mensagem para cada número
         if template_name:
             resultados = enviar_via_template(numeros, template_name, body.get('parametros', []))
         else:
@@ -94,7 +91,6 @@ def obter_numeros_telefone():
 
 
 def enviar_whatsapp_em_massa(numeros, mensagem):
-    """Envia mensagem de texto livre via Meta WhatsApp API"""
     phone_number_id = os.environ['META_PHONE_NUMBER_ID']
     access_token = os.environ['META_ACCESS_TOKEN']
     url = f"https://graph.instagram.com/v18.0/{phone_number_id}/messages"
@@ -137,7 +133,6 @@ def enviar_whatsapp_em_massa(numeros, mensagem):
 
 
 def enviar_via_template(numeros, template_name, parametros):
-    """Envia mensagem usando template pré-aprovado (mais barato)"""
     phone_number_id = os.environ['META_PHONE_NUMBER_ID']
     access_token = os.environ['META_ACCESS_TOKEN']
     url = f"https://graph.instagram.com/v18.0/{phone_number_id}/messages"
@@ -158,7 +153,6 @@ def enviar_via_template(numeros, template_name, parametros):
                 }
             }
 
-            # Adiciona parâmetros se fornecidos
             if parametros:
                 payload["template"]["components"] = [
                     {

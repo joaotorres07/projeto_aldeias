@@ -107,19 +107,15 @@ def agrupar_aldeeiros(rows):
                 "aldeias_serviu": set()
             }
 
-        # Equipes
         if r.get("nome_equipe"):
             agrupado[cpf]["equipes"].add(r["nome_equipe"])
 
-        # Aldeias que fez
         if r.get("nome_aldeia_fez"):
             agrupado[cpf]["aldeias_fez"].add(r["nome_aldeia_fez"])
 
-        # Aldeias que serviu
         if r.get("aldeia_serviu"):
             agrupado[cpf]["aldeias_serviu"].add(r["aldeia_serviu"])
 
-    # Converter sets para listas (JSON-friendly)
     resultado = []
     for a in agrupado.values():
         a["equipes"] = list(a["equipes"])

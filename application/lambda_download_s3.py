@@ -13,7 +13,6 @@ logger.addHandler(log_format)
 
 
 def lambda_handler(event, context):
-    """Gera uma URL pré-assinada para download de arquivo no S3."""
     try:
         body = event.get("body", {})
         if isinstance(body, str):
@@ -35,7 +34,6 @@ def lambda_handler(event, context):
             region_name=os.environ.get('AWS_REGION', 'us-east-1')
         )
 
-        # Verifica se o arquivo existe
         try:
             s3_client.head_object(Bucket=bucket, Key=s3_key)
         except ClientError as e:
@@ -46,7 +44,6 @@ def lambda_handler(event, context):
                 }
             raise
 
-        # Gera URL pré-assinada válida por 5 minutos
         url = s3_client.generate_presigned_url(
             'get_object',
             Params={
@@ -72,7 +69,6 @@ def lambda_handler(event, context):
 
 
 def listar_arquivos(equipe):
-    """Lista arquivos de uma equipe no S3."""
     try:
         bucket = os.environ.get('S3_BUCKET_NAME', 'aldeias-arquivos')
         prefix = f"equipes/{equipe}/"

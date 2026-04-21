@@ -10,7 +10,7 @@ from lambda_get_aldeeiros import lambda_handler as lambda_handler_aldeeiros
 from lambda_gerar_formacao import lambda_handler as lambda_handler_formacao
 from lambda_registrar_presenca import lambda_handler as lambda_handler_presenca
 from lambda_envia_alerta_wpp_meta import lambda_handler as lambda_handler_whatsapp
-from lambda_auth import login as auth_login, cadastrar_usuario, recuperar_senha
+from lambda_auth import login as auth_login, cadastrar_usuario, solicitar_recuperacao, confirmar_recuperacao
 from lambda_download_s3 import lambda_handler as lambda_handler_download, listar_arquivos
 
 template_path = "C:/Users/joao-/Documents/GitHub/projeto_aldeias/templates"
@@ -98,23 +98,40 @@ def cadastro_page():
 @application.route("/recuperar-senha", methods=["GET", "POST"])
 def recuperar_senha_page():
     if request.method == "POST":
+        body = {"email": request.form.get("email")}
+        result = solicitar_recuperacao(body)
+        if result["statusCode"] == 200:
+            flash("Código enviado para o seu email. Válido por 10 minutos.", "success")
+            return redirect(url_for('confirmar_codigo_page', email=body['email']))
+        else:
+            flash(json.loads(result["body"]).get("error", "Erro ao solicitar recuperação."), "error")
+    return render_template("recuperar_senha.html")
+
+
+@application.route("/confirmar-codigo", methods=["GET", "POST"])
+def confirmar_codigo_page():
+    email = request.args.get("email") or request.form.get("email", "")
+
+    if request.method == "POST":
         nova_senha = request.form.get("nova_senha")
         confirmar = request.form.get("confirmar_senha")
         if nova_senha != confirmar:
             flash("As senhas não coincidem.", "error")
-            return render_template("recuperar_senha.html")
+            return render_template("confirmar_codigo.html", email=email)
 
         body = {
-            "email": request.form.get("email"),
+            "email": email,
+            "codigo": request.form.get("codigo"),
             "nova_senha": nova_senha
         }
-        result = recuperar_senha(body)
+        result = confirmar_recuperacao(body)
         if result["statusCode"] == 200:
             flash("Senha alterada com sucesso! Faça login.", "success")
             return redirect(url_for('login_page'))
         else:
-            flash(json.loads(result["body"]).get("error", "Erro ao recuperar senha."), "error")
-    return render_template("recuperar_senha.html")
+            flash(json.loads(result["body"]).get("error", "Erro ao confirmar código."), "error")
+
+    return render_template("confirmar_codigo.html", email=email)
 
 
 @application.route("/logout")
@@ -122,7 +139,6 @@ def logout():
     session.clear()
     flash("Você saiu do sistema.", "success")
     return redirect(url_for('login_page'))
-
 
 # ==================== PAGES ====================
 
@@ -224,7 +240,6 @@ def pesquisar_aldeeeiros():
     if sel_aldeias_fez or sel_aldeias_serviu or sel_equipes:
         filtered = []
         for a in aldeeiros:
-            # Buscar relações do aldeeiro
             rel = get_aldeeiro_relacoes(a.get('cpf', ''))
             rel_fez = [str(x) for x in rel['aldeias_fez']]
             rel_serviu = [str(x) for x in rel['aldeias_serviu']]
@@ -271,7 +286,7 @@ def abrir_formacao():
         if result["statusCode"] == 200:
             flash("Formação aberta com sucesso!", "success")
         else:
-            flash(f"Erro ao abrir formação: {result.get('body')}", "error")
+            flash(json.loads(result.get('body')).get('error', 'Erro ao abrir formação.'), "error")
         return redirect(url_for('abrir_formacao'))
 
     nucleos = get_nucleos()
@@ -512,7 +527,6 @@ def gerenciar_perfis():
                 connection.close()
         return redirect(url_for('gerenciar_perfis'))
 
-    # GET - buscar apenas perfis disponíveis
     connection = None
     perfis = []
     try:
@@ -575,7 +589,6 @@ def get_nucleos():
 
 
 def get_formacoes():
-    """Busca formações do banco para popular o select de presença."""
     connection = None
     try:
         connection = pymysql.connect(
@@ -586,7 +599,7 @@ def get_formacoes():
             cursorclass=pymysql.cursors.DictCursor
         )
         with connection.cursor() as cursor:
-            cursor.execute("SELECT id, tema, data_formacao, nucleo FROM db_aldeias.tb_formacao ORDER BY data_formacao DESC")
+            cursor.execute("SELECT id, tema, data_formacao, nucleo FROM db_aldeias.tb_formacao WHERE data_formacao = CURDATE() ORDER BY data_formacao DESC")
             return cursor.fetchall()
     except Exception:
         return []
@@ -596,7 +609,7 @@ def get_formacoes():
 
 
 def get_formacoes_por_nucleo(nucleo_id):
-    """Busca formações filtradas por núcleo."""
+    """Busca formações filtradas por núcleo com data de hoje."""
     connection = None
     try:
         connection = pymysql.connect(
@@ -608,7 +621,7 @@ def get_formacoes_por_nucleo(nucleo_id):
         )
         with connection.cursor() as cursor:
             cursor.execute(
-                "SELECT id, tema, data_formacao, nucleo FROM db_aldeias.tb_formacao WHERE nucleo = %s ORDER BY data_formacao DESC",
+                "SELECT id, tema, data_formacao, nucleo FROM db_aldeias.tb_formacao WHERE nucleo = %s AND data_formacao = CURDATE() ORDER BY data_formacao DESC",
                 (nucleo_id,)
             )
             return cursor.fetchall()
@@ -620,7 +633,6 @@ def get_formacoes_por_nucleo(nucleo_id):
 
 
 def get_perfil_usuario(email):
-    """Busca os perfis do aldeeiro pelo email do usuário logado."""
     connection = None
     try:
         connection = pymysql.connect(
@@ -648,7 +660,6 @@ def get_perfil_usuario(email):
 
 
 def get_aldeeiro_por_email(email):
-    """Busca dados do aldeeiro pelo email do usuário logado."""
     connection = None
     try:
         connection = pymysql.connect(
@@ -669,7 +680,6 @@ def get_aldeeiro_por_email(email):
 
 
 def get_aldeeiro_relacoes(cpf):
-    """Busca equipes, aldeias_fez e aldeias_serviu do aldeeiro pelo CPF."""
     connection = None
     result = {'equipes': [], 'aldeias_fez': [], 'aldeias_serviu': []}
     try:
