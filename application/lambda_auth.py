@@ -32,12 +32,10 @@ def get_db_connection():
 
 
 def gerar_codigo(tamanho=6):
-    """Gera código numérico aleatório de 6 dígitos."""
     return ''.join(random.choices(string.digits, k=tamanho))
 
 
 def enviar_email_codigo(email, codigo):
-    """Envia o código de recuperação via AWS SES."""
     ses = boto3.client('ses', region_name=os.environ.get('AWS_REGION', 'us-east-1'))
     ses.send_email(
         Source=os.environ['EMAIL_REMETENTE'],
@@ -61,7 +59,6 @@ def enviar_email_codigo(email, codigo):
 
 
 def cadastrar_usuario(body):
-    """Cadastra um novo usuário. Impede email duplicado."""
     connection = get_db_connection()
     try:
         with connection.cursor() as cursor:
@@ -93,7 +90,6 @@ def cadastrar_usuario(body):
 
 
 def login(body):
-    """Valida login do usuário."""
     connection = get_db_connection()
     try:
         with connection.cursor() as cursor:
@@ -126,7 +122,6 @@ def login(body):
 
 
 def solicitar_recuperacao(body):
-    """Etapa 1: gera código de 6 dígitos, salva no banco e envia por email."""
     connection = get_db_connection()
     try:
         with connection.cursor() as cursor:
@@ -141,7 +136,6 @@ def solicitar_recuperacao(body):
                     "body": json.dumps({"error": "Email não encontrado."})
                 }
 
-            # Invalida códigos anteriores não usados
             cursor.execute(
                 "UPDATE db_aldeias.tb_recuperacao_senha SET usado = 1 WHERE usuario_id = %s AND usado = 0",
                 (usuario['id'],)
@@ -173,7 +167,6 @@ def solicitar_recuperacao(body):
 
 
 def confirmar_recuperacao(body):
-    """Etapa 2: valida código (10 min) e altera a senha."""
     connection = get_db_connection()
     try:
         with connection.cursor() as cursor:
@@ -188,7 +181,6 @@ def confirmar_recuperacao(body):
                     "body": json.dumps({"error": "Email não encontrado."})
                 }
 
-            # Busca código válido: não usado e criado há no máximo 10 minutos
             cursor.execute(
                 """SELECT id FROM db_aldeias.tb_recuperacao_senha
                    WHERE usuario_id = %s AND codigo = %s AND usado = 0
@@ -203,13 +195,11 @@ def confirmar_recuperacao(body):
                     "body": json.dumps({"error": "Código inválido ou expirado."})
                 }
 
-            # Marca código como usado
             cursor.execute(
                 "UPDATE db_aldeias.tb_recuperacao_senha SET usado = 1 WHERE id = %s",
                 (token['id'],)
             )
 
-            # Atualiza senha
             nova_senha_hash = generate_password_hash(body['nova_senha'])
             cursor.execute(
                 "UPDATE db_aldeias.tb_usuario SET senha_hash = %s WHERE id = %s",

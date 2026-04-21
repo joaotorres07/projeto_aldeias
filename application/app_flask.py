@@ -1,6 +1,7 @@
 import json
 import os
 import pymysql
+from datetime import datetime, timedelta
 from functools import wraps
 
 from flask import Flask, render_template, request, session, redirect, url_for, flash
@@ -16,8 +17,27 @@ from lambda_download_s3 import lambda_handler as lambda_handler_download, listar
 template_path = "C:/Users/joao-/Documents/GitHub/projeto_aldeias/templates"
 application = Flask(__name__, template_folder=template_path)
 application.secret_key = os.environ.get('SECRET_KEY', 'aldeias-secret-key-2026')
+application.permanent_session_lifetime = timedelta(minutes=5)
 
 NUCLEOS_CACHE = None
+
+
+@application.before_request
+def check_session_timeout():
+    rotas_publicas = ['login_page', 'cadastro_page', 'recuperar_senha_page', 'confirmar_codigo_page', 'static']
+    if request.endpoint in rotas_publicas:
+        return
+
+    if session.get('usuario_id'):
+        last_activity = session.get('last_activity')
+        now = datetime.utcnow()
+        if last_activity:
+            elapsed = (now - datetime.fromisoformat(last_activity)).total_seconds()
+            if elapsed > 300:
+                session.clear()
+                flash('Sessão expirada por inatividade. Faça login novamente.', 'error')
+                return redirect(url_for('login_page'))
+        session['last_activity'] = now.isoformat()
 
 
 def login_required(f):
@@ -62,10 +82,12 @@ def login_page():
         result = auth_login(body)
         if result["statusCode"] == 200:
             usuario = result["usuario"]
+            session.permanent = True
             session['usuario_id'] = usuario['id']
             session['usuario_nome'] = usuario['nome']
             session['usuario_email'] = usuario['email']
             session['perfil'] = get_perfil_usuario(usuario['email'])
+            session['last_activity'] = datetime.utcnow().isoformat()
             return redirect(url_for('index'))
         else:
             flash(json.loads(result["body"]).get("error", "Erro no login."), 'error')
