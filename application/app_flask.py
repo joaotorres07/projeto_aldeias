@@ -331,7 +331,7 @@ def registrar_presenca():
         if result["statusCode"] == 200:
             flash("Presença registrada com sucesso!", "success")
         else:
-            flash(f"Erro ao registrar presença: {result.get('body')}", "error")
+            flash(json.loads(result.get('body')).get('error', 'Erro ao registrar presença.'), "error")
         return redirect(url_for('registrar_presenca'))
 
     nucleos = get_nucleos()
@@ -375,7 +375,7 @@ def arquivos_informativos():
     ]
 
     equipes = []
-    for eq in equipes_config:
+    ''' for eq in equipes_config:
         arquivos = listar_arquivos(eq["pasta"])
         for arq in arquivos:
             tamanho = arq.get("tamanho", 0)
@@ -386,7 +386,7 @@ def arquivos_informativos():
             else:
                 arq["tamanho_formatado"] = f"{tamanho} B"
         equipes.append({"nome": eq["nome"], "arquivos": arquivos})
-
+    '''
     return render_template("arquivos_informativos.html", equipes=equipes)
 
 
@@ -631,7 +631,6 @@ def get_formacoes():
 
 
 def get_formacoes_por_nucleo(nucleo_id):
-    """Busca formações filtradas por núcleo com data de hoje."""
     connection = None
     try:
         connection = pymysql.connect(
