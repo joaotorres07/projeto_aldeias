@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Arquivos e Informativos - Aldeias{% endblock %}
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-folder2-open"></i> Arquivos e Informativos</h2>
+
+{% for equipe in equipes %}
+<div class="card p-4 mb-4">
+    <h4 class="mb-3">
+        {% if equipe.nome == 'Banda' %}
+            <i class="bi bi-music-note-beamed text-primary"></i>
+        {% elif equipe.nome == 'Cozinha' %}
+            <i class="bi bi-cup-hot text-warning"></i>
+        {% else %}
+            <i class="bi bi-people-fill text-success"></i>
+        {% endif %}
+        {{ equipe.nome }}
+    </h4>
+
+    {% if equipe.arquivos|length > 0 %}
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Arquivo</th>
+                    <th>Tamanho</th>
+                    <th>Última Modificação</th>
+                    <th class="text-center">Ação</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for arq in equipe.arquivos %}
+                <tr>
+                    <td><i class="bi bi-file-earmark"></i> {{ arq.nome }}</td>
+                    <td>{{ arq.tamanho_formatado }}</td>
+                    <td>{{ arq.ultima_modificacao }}</td>
+                    <td class="text-center">
+                        <a href="/arquivos/download?s3_key={{ arq.s3_key|urlencode }}" class="btn btn-sm btn-outline-primary" target="_blank">
+                            <i class="bi bi-download"></i> Baixar
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="text-muted"><i class="bi bi-info-circle"></i> Nenhum arquivo disponível para esta equipe.</div>
+    {% endif %}
+</div>
+{% endfor %}
+{% endblock %}
+

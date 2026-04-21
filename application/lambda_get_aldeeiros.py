@@ -4,7 +4,10 @@ import logging
 import pymysql
 from decimal import Decimal
 
-from application.lambda_get_dados import decimal_serializer
+try:
+    from application.lambda_get_dados import decimal_serializer
+except ImportError:
+    from lambda_get_dados import decimal_serializer
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -22,7 +25,7 @@ def lambda_handler(event, context):
         retorno_agrupado = agrupar_aldeeiros(data_result)
         retorno_lambda = {
             "statusCode": 200,
-            "body": json.dumps(retorno_agrupado)
+            "body": json.dumps(retorno_agrupado, default=decimal_serializer, ensure_ascii=False)
 
         }
     except Exception as e:
@@ -56,7 +59,7 @@ def select_aldeeiros_by(filtros):
     connection = get_db_connection()
     try:
         with connection.cursor() as cursor:
-            sql = """SELECT a.nome as nome_aldeeiro, n.nome as nucleo, a.telefone as telefone_aldeeiro, e.nome as nome_equipe, 
+            sql = """SELECT a.cpf as cpf, a.nome as nome_aldeeiro, n.nome as nucleo, a.telefone as telefone_aldeeiro, e.nome as nome_equipe, 
                             ad.nome_aldeia as nome_aldeia_fez, ad2.nome_aldeia as aldeia_serviu 
                         FROM db_aldeias.tb_aldeeiro a
                         LEFT JOIN db_aldeias.tb_aldeeiro_aldeia_fez aaf ON aaf.cpf_aldeeiro = a.cpf
@@ -91,11 +94,12 @@ def select_aldeeiros_by(filtros):
 def agrupar_aldeeiros(rows):
     agrupado = {}
     for r in rows:
-        nome = r["nome_aldeeiro"]
+        cpf = r["cpf"]
 
-        if nome not in agrupado:
-            agrupado[nome] = {
-                "nome_aldeeiro": nome,
+        if cpf not in agrupado:
+            agrupado[cpf] = {
+                "cpf": cpf,
+                "nome_aldeeiro": r["nome_aldeeiro"],
                 "telefone": r["telefone_aldeeiro"],
                 "nucleo": r["nucleo"],
                 "equipes": set(),
@@ -105,15 +109,15 @@ def agrupar_aldeeiros(rows):
 
         # Equipes
         if r.get("nome_equipe"):
-            agrupado[nome]["equipes"].add(r["nome_equipe"])
+            agrupado[cpf]["equipes"].add(r["nome_equipe"])
 
         # Aldeias que fez
         if r.get("nome_aldeia_fez"):
-            agrupado[nome]["aldeias_fez"].add(r["nome_aldeia_fez"])
+            agrupado[cpf]["aldeias_fez"].add(r["nome_aldeia_fez"])
 
         # Aldeias que serviu
         if r.get("aldeia_serviu"):
-            agrupado[nome]["aldeias_serviu"].add(r["aldeia_serviu"])
+            agrupado[cpf]["aldeias_serviu"].add(r["aldeia_serviu"])
 
     # Converter sets para listas (JSON-friendly)
     resultado = []

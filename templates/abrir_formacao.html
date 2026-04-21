@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Abrir Formação - Aldeias{% endblock %}
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-journal-plus"></i> Abrir Formação</h2>
+
+<div class="card p-4" style="max-width: 600px;">
+    <form method="POST" action="/formacao/abrir">
+        <div class="mb-3">
+            <label for="nucleo" class="form-label">Núcleo</label>
+            <select class="form-select" id="nucleo" name="nucleo" required>
+                <option value="">Selecione o núcleo</option>
+                {% for n in nucleos %}
+                    <option value="{{ n.id }}">{{ n.nome }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="tema" class="form-label">Tema da Formação</label>
+            <input type="text" class="form-control" id="tema" name="tema" required placeholder="Ex: Formação Espiritual">
+        </div>
+        <button type="submit" class="btn btn-warning text-white"><i class="bi bi-plus-circle"></i> Abrir Formação</button>
+        <a href="/init-aldeias" class="btn btn-secondary ms-2">Cancelar</a>
+    </form>
+</div>
+{% endblock %}
+

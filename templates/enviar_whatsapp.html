@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Enviar WhatsApp - Aldeias{% endblock %}
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-whatsapp"></i> Enviar Mensagem WhatsApp</h2>
+
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card p-4">
+            <h5 class="mb-3"><i class="bi bi-chat-text"></i> Enviar Mensagem de Texto</h5>
+            <form method="POST" action="/whatsapp/enviar">
+                <input type="hidden" name="tipo_envio" value="mensagem">
+                <div class="mb-3">
+                    <label for="mensagem" class="form-label">Mensagem</label>
+                    <textarea class="form-control" id="mensagem" name="mensagem" rows="5" required placeholder="Digite a mensagem a ser enviada..."></textarea>
+                </div>
+                <button type="submit" class="btn btn-success"><i class="bi bi-send"></i> Enviar para Todos</button>
+            </form>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card p-4">
+            <h5 class="mb-3"><i class="bi bi-file-earmark-text"></i> Enviar via Template</h5>
+            <form method="POST" action="/whatsapp/enviar">
+                <input type="hidden" name="tipo_envio" value="template">
+                <div class="mb-3">
+                    <label for="template_name" class="form-label">Nome do Template</label>
+                    <input type="text" class="form-control" id="template_name" name="template_name" required placeholder="Nome do template aprovado na Meta">
+                </div>
+                <div class="mb-3">
+                    <label for="parametros" class="form-label">Parâmetros (separados por vírgula)</label>
+                    <input type="text" class="form-control" id="parametros" name="parametros" placeholder="param1, param2, param3">
+                    <small class="text-muted">Parâmetros do template, separados por vírgula</small>
+                </div>
+                <button type="submit" class="btn btn-success"><i class="bi bi-send"></i> Enviar Template</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="mt-4">
+    <a href="/init-aldeias" class="btn btn-secondary"><i class="bi bi-arrow-left"></i> Voltar ao Painel</a>
+</div>
+{% endblock %}
+

@@ -1,105 +1,76 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-    <head>
-        <meta charset="UTF-8">
-        <title>Listar Aldeeiros</title>
-        <style>
-            body {
-                font-family: Arial, Helvetica, sans-serif;
-                background-color: #f4f6f8;
-                padding: 30px;
-            }
+{% extends "base.html" %}
+{% block title %}Consultar Aldeeiro(s) - Aldeias{% endblock %}
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-people"></i> Consultar Aldeeiro(s)</h2>
 
-            h2 {
-                margin-bottom: 20px;
-            }
-
-            .filtros {
-                background: #ffffff;
-                padding: 15px;
-                border-radius: 6px;
-                margin-bottom: 20px;
-                box-shadow: 0 1px 4px rgba(0,0,0,0.1);
-            }
-
-            .filtros label {
-                display: block;
-                margin-top: 10px;
-            }
-
-            .filtros input,
-            .filtros select {
-                width: 250px;
-                padding: 6px;
-                margin-top: 5px;
-            }
-
-            .filtros button {
-                margin-top: 15px;
-                padding: 8px 18px;
-                background-color: #3498db;
-                border: none;
-                color: white;
-                border-radius: 4px;
-                cursor: pointer;
-            }
-
-            table {
-                border-collapse: collapse;
-                width: 100%;
-                background: #ffffff;
-            }
-
-            th, td {
-                border: 1px solid #ddd;
-                padding: 8px;
-                vertical-align: top;
-            }
-
-            th {
-                background-color: #f0f0f0;
-            }
-
-            ul {
-                padding-left: 18px;
-                margin: 0;
-            }
-        </style>
-    </head>
-    <body>
-        <h2>Listagem de Aldeeiros</h2>
-
-        <form method="GET" action="/pesquisarAldeeiros">
-            <div class="filtros">
-                <label>Nome</label>
-                <input type="text" name="nome" value="{{ request.args.get('nome','') }}">
-
-                <label>Núcleo</label>
-                <select name="nucleo">
+<div class="card p-4 mb-4">
+    <form method="POST" action="/pesquisarAldeeiros">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label for="nome" class="form-label">Nome</label>
+                <input type="text" class="form-control" id="nome" name="nome" placeholder="Buscar por nome..."
+                       value="{{ filtro_nome|default('') }}">
+            </div>
+            <div class="col-md-3">
+                <label for="nucleo" class="form-label">Núcleo</label>
+                <select class="form-select" id="nucleo" name="nucleo">
                     <option value="">Todos</option>
-                    {% for nucleo in nucleos %}
-                        <option value="{{ nucleo.id }}"
-                            {% if request.args.get('nucleo') == nucleo.id|string %}selected{% endif %}>
-                            {{ nucleo.nome }}
-                        </option>
+                    {% for n in nucleos %}
+                        <option value="{{ n.id }}" {{ 'selected' if filtro_nucleo|default('') == n.id|string }}>{{ n.nome }}</option>
                     {% endfor %}
                 </select>
-                <br>
-
-                <button type="submit">🔍 Pesquisar</button>
-                <a href="/init-aldeias">Voltar ao início</a>
             </div>
-        </form>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search"></i> Pesquisar</button>
+            </div>
+            <div class="col-md-3">
+                <a href="/aldeeiro/listar" class="btn btn-outline-secondary w-100"><i class="bi bi-x-circle"></i> Limpar Filtros</a>
+            </div>
+        </div>
+        <div class="row g-3 mt-1">
+            <div class="col-md-4">
+                <label for="aldeias_fez" class="form-label">Aldeias que fez</label>
+                <select class="form-select" id="aldeias_fez" name="aldeias_fez" multiple size="4">
+                    {% for a in aldeias|default([]) %}
+                        <option value="{{ a.id }}" {{ 'selected' if a.id|string in sel_aldeias_fez|default([]) }}>{{ a.nome_aldeia }}</option>
+                    {% endfor %}
+                </select>
+                <small class="text-muted">Ctrl + clique para múltiplos</small>
+            </div>
+            <div class="col-md-4">
+                <label for="aldeias_serviu" class="form-label">Aldeias que serviu</label>
+                <select class="form-select" id="aldeias_serviu" name="aldeias_serviu" multiple size="4">
+                    {% for a in aldeias|default([]) %}
+                        <option value="{{ a.id }}" {{ 'selected' if a.id|string in sel_aldeias_serviu|default([]) }}>{{ a.nome_aldeia }}</option>
+                    {% endfor %}
+                </select>
+                <small class="text-muted">Ctrl + clique para múltiplos</small>
+            </div>
+            <div class="col-md-4">
+                <label for="equipes" class="form-label">Equipes que serviu</label>
+                <select class="form-select" id="equipes" name="equipes" multiple size="4">
+                    {% for e in equipes_lista|default([]) %}
+                        <option value="{{ e.id }}" {{ 'selected' if e.id|string in sel_equipes|default([]) }}>{{ e.nome }}</option>
+                    {% endfor %}
+                </select>
+                <small class="text-muted">Ctrl + clique para múltiplos</small>
+            </div>
+        </div>
+    </form>
+</div>
 
-        {% if aldeeiros %}
-        <table>
-            <thead>
+{% if aldeeiros %}
+<div class="card p-4">
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead class="table-dark">
                 <tr>
                     <th>Nome</th>
                     <th>Núcleo</th>
+                    <th>Telefone</th>
                     <th>Equipes</th>
-                    <th>Aldeias que fez</th>
-                    <th>Aldeias que serviu</th>
+                    <th>Aldeias que Fez</th>
+                    <th>Aldeias que Serviu</th>
                 </tr>
             </thead>
             <tbody>
@@ -107,35 +78,30 @@
                 <tr>
                     <td>{{ a.nome_aldeeiro }}</td>
                     <td>{{ a.nucleo }}</td>
+                    <td>{{ a.telefone }}</td>
                     <td>
-                        <ul>
-                            {% for e in a.equipes %}
-                                <li>{{ e }}</li>
-                            {% endfor %}
-                        </ul>
+                        {% for eq in a.equipes %}
+                            <span class="badge bg-primary">{{ eq }}</span>
+                        {% endfor %}
                     </td>
-
                     <td>
-                        <ul>
-                            {% for al in a.aldeias_fez %}
-                                <li>{{ al }}</li>
-                            {% endfor %}
-                        </ul>
+                        {% for af in a.aldeias_fez %}
+                            <span class="badge bg-success">{{ af }}</span>
+                        {% endfor %}
                     </td>
-
                     <td>
-                        <ul>
-                            {% for al in a.aldeias_serviu %}
-                                <li>{{ al }}</li>
-                            {% endfor %}
-                        </ul>
+                        {% for asv in a.aldeias_serviu %}
+                            <span class="badge bg-info">{{ asv }}</span>
+                        {% endfor %}
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
-        {% else %}
-            <p>Nenhum registro encontrado.</p>
-        {% endif %}
-    </body>
-</html>
+    </div>
+    <p class="text-muted">Total: {{ aldeeiros|length }} aldeeiro(s) encontrado(s)</p>
+</div>
+{% elif aldeeiros is defined and aldeeiros|length == 0 %}
+<div class="alert alert-warning">Nenhum aldeeiro encontrado com os filtros informados.</div>
+{% endif %}
+{% endblock %}

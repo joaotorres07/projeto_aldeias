@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Registrar Presença - Aldeias{% endblock %}
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-check2-square"></i> Registrar Presença</h2>
+
+<div class="card p-4" style="max-width: 600px;">
+    {% if aldeeiro %}
+    <div class="alert alert-info mb-3">
+        <i class="bi bi-person-circle"></i> Registrando presença de: <strong>{{ aldeeiro.nome }}</strong> ({{ aldeeiro.cpf }})
+    </div>
+    {% else %}
+    <div class="alert alert-warning mb-3">
+        <i class="bi bi-exclamation-triangle"></i> Seu cadastro de aldeeiro não foi encontrado. <a href="/aldeeiro/form">Complete seu cadastro</a> primeiro.
+    </div>
+    {% endif %}
+
+    <form method="POST" action="/formacao/presenca">
+        <div class="mb-3">
+            <label for="nucleo" class="form-label">Núcleo</label>
+            <select class="form-select" id="nucleo" name="nucleo" required onchange="carregarFormacoes()">
+                <option value="">Selecione o núcleo</option>
+                {% for n in nucleos %}
+                    <option value="{{ n.id }}" {{ 'selected' if nucleo_aldeeiro and nucleo_aldeeiro == n.id }}>{{ n.nome }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="id_formacao" class="form-label">Formação</label>
+            <select class="form-select" id="id_formacao" name="id_formacao" required>
+                <option value="">Selecione a formação</option>
+                {% for f in formacoes %}
+                    <option value="{{ f.id }}">{{ f.tema }} - {{ f.data_formacao }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-info text-white" {{ 'disabled' if not aldeeiro }}>
+            <i class="bi bi-check-lg"></i> Registrar Presença
+        </button>
+        <a href="/init-aldeias" class="btn btn-secondary ms-2">Cancelar</a>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function carregarFormacoes() {
+    const nucleo = document.getElementById('nucleo').value;
+    const selectFormacao = document.getElementById('id_formacao');
+    selectFormacao.innerHTML = '<option value="">Carregando...</option>';
+
+    if (!nucleo) {
+        selectFormacao.innerHTML = '<option value="">Selecione o núcleo primeiro</option>';
+        return;
+    }
+
+    fetch('/api/formacoes?nucleo=' + encodeURIComponent(nucleo))
+        .then(r => r.json())
+        .then(data => {
+            selectFormacao.innerHTML = '<option value="">Selecione a formação</option>';
+            data.forEach(f => {
+                const opt = document.createElement('option');
+                opt.value = f.id;
+                opt.textContent = f.tema + ' - ' + f.data_formacao;
+                selectFormacao.appendChild(opt);
+            });
+        })
+        .catch(() => {
+            selectFormacao.innerHTML = '<option value="">Erro ao carregar formações</option>';
+        });
+}
+</script>
+{% endblock %}

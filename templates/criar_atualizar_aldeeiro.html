@@ -1,177 +1,109 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="description" content="Formulário de cadastro das aldeias de vida."/>
-        <meta http-equiv="content-language" content="pt-br" />
-        <link rel="stylesheet" href="criar css">
-        <title>Cadastro Aldeeiro(a)</title>
-    </head>
+{% extends "base.html" %}
+{% block title %}Concluir / Atualizar Cadastro - Aldeias{% endblock %}
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-person-fill-gear"></i> Concluir ou Atualizar meu Cadastro</h2>
 
-    <script>
-        function toggleServiu(checkbox) {
-            const bloco = document.getElementById('bloco-serviu');
-            if (checkbox.checked) {
-                bloco.style.display = 'block';
-            } else {
-                bloco.style.display = 'none';
-            }
-        }
+{% if aldeeiro %}
+<div class="alert alert-info"><i class="bi bi-info-circle"></i> Seus dados foram encontrados. Atualize o que precisar.</div>
+{% else %}
+<div class="alert alert-warning"><i class="bi bi-exclamation-triangle"></i> Complete seu cadastro de aldeeiro para usar o sistema.</div>
+{% endif %}
 
-        function mascaraTelefone(campo) {
-            let valor = campo.value.replace(/\D/g, ""); // só números
-            valor = valor.substring(0, 14);
-            if (valor.length === 0) {
-                campo.value = "";
-                return;
-            }
-            if (valor.length < 3) {
-                campo.value = "(" + valor;
-                return;
-            }
-            if (valor.length < 7) {
-                campo.value = "(" + valor.substring(0, 2) + ") " + valor.substring(2);
-                return;
-            }
-            if (valor.length < 11) {
-                campo.value = "(" + valor.substring(0, 2) + ") " +
-                    valor.substring(2, 3) + " " + valor.substring(3);
-                return;
-            }
-
-            campo.value = "(" + valor.substring(0, 2) + ") " +
-                valor.substring(2, 3) + " " + valor.substring(3, 7) + "-" + valor.substring(7, 11);
-        }
-
-        function mascaraCPF(campo) {
-            let valor = campo.value.replace(/\D/g, '');
-            valor = valor.substring(0, 14);
-            valor = valor.replace(/(\d{3})(\d)/, "$1.$2");
-            valor = valor.replace(/(\d{3})(\d)/, "$1.$2");
-            valor = valor.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
-            campo.value = valor;
-            document.getElementById('cpf').value = numeros;
-        }
-
-        function removerNumeros(campo) {
-            campo.value = campo.value.replace(/[0-9]/g, '');
-        }
-    </script>
-
-    <body>
-        <header>
-            <div>
-                <div>
-                    <img src="undefined" alt="undefined" title="Aldeias de Vida"/>
-                </div>
+<div class="card p-4">
+    <form method="POST" action="/salvar_atualizar_aldeeiro">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label for="nome" class="form-label">Nome Completo</label>
+                <input type="text" class="form-control" id="nome" name="nome" required pattern="[A-Za-zÀ-ÿ\s]+"
+                       value="{{ aldeeiro.nome if aldeeiro else '' }}">
             </div>
-        </header>
-
-        <main>
-            <section>
-                <div>
-                    <div>
-                        <div>
-                            <h1>Formulário de cadastro</h1>
-                            <form class="form" method="post" action="/salvar_atualizar_aldeeiro">
-                                <div>
-                                    <label for="nome">Nome</label>
-                                    <input type="text" name="nome" id="nome" required pattern="[A-Za-zÀ-ÿ\s]+"
-                                           title="Informe somente letras" oninput="removerNumeros(this)">
-                                </div>
-                                <br><br>
-
-                                <div>
-                                    <label for="cpf">CPF</label>
-                                    <input type="text" name="cpf" id="cpf" pattern="[0-9]+" maxlength="14" placeholder="000.000.000-00"
-                                           required inputmode="numeric" title="Informe somente números" >
-                                </div>
-                                <br><br>
-
-                                <div>
-                                    <label for="data_nascimento" >Data de Nascimento</label>
-                                    <input type="date" name="data_nascimento" id="data_nascimento" placeholder="Data de Nascimento" required>
-                                </div>
-                                <br><br>
-
-                                <div>
-                                    <label for="telefone" >Telefone</label>
-                                    <input type="text" id="telefone" name="telefone" placeholder="(99) 9 9999-9999" required
-                                        inputmode="numeric" title="Digite somente números. Mínimo de 9 dígitos." pattern="[0-9]+">
-                                </div>
-                                <br><br>
-
-                                <div>
-                                    <label for="email" >Email</label>
-                                    <input type="email" name="email" id="email" placeholder="seuemail@email.com" required>
-                                </div>
-                                <br><br>
-
-                                <div>
-                                    <label>Núcleo</label><br>
-                                    <select name="nucleo" required class="form_input">
-                                        <option value="">Selecione</option>
-                                        {% for nucleo in nucleos %}
-                                            <option value="{{ nucleo.id }}">{{ nucleo.nome }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                                <br><br>
-
-                                <div>
-                                    <label>Aldeias que já fez</label><br>
-                                    <select name="aldeias_fez" multiple size="{{ aldeias_fez.length }}" class="form_input">
-                                        {% for aldeia in aldeias_fez %}
-                                            <option value="{{ aldeia.id }}">{{ aldeia.nome_aldeia }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                                <br><br>
-
-                                <div>
-                                    <label for="chk_serviu" class="form_label check_label">
-                                        Já serviu em alguma aldeia?
-                                        <input type="checkbox" id="chk_serviu" name="serviu" value="true" onchange="toggleServiu(this)">
-                                    </label>
-                                </div>
-                                <br><br>
-
-                                <div id="bloco-serviu" style="display: none;">
-                                    <div>
-                                        <label for="aldeias_serviu" >Aldeias que já serviu</label><br>
-                                        <select name="aldeias_serviu" id="aldeias_serviu" multiple size="{{ aldeias_serviu|length }}">
-                                            {% for aldeia in aldeias_serviu %}
-                                                <option value="{{ aldeia.id }}">{{ aldeia.nome_aldeia }}</option>
-                                            {% endfor %}
-                                        </select>
-                                    </div>
-                                    <br><br>
-
-                                    <div>
-                                        <label for="equipes" >Equipes que Serviu</label><br>
-                                        <select name="equipes" id="equipes" multiple size="{{ equipes|length }}">
-                                            {% for equipe in equipes %}
-                                                <option value="{{ equipe.id }}">{{ equipe.nome }}</option>
-                                            {% endfor %}
-                                        </select>
-                                    </div>
-                                    <br><br>
-                                </div>
-                                <div>
-                                    <button type="submit" name="Submit" class="submit_btn">Salvar</button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                    <div></div>
-                </div>
-            </section>
-        </main>
-        <footer class="main_footer container">
-            <div class="main_footer_copy">
-                <p class="m-b-footer"> Aldeias de Vida - 2026, todos os direitos reservados.</p>
-                <p class="by"><i class="icon icon-heart-3"></i> Desenvolvido por: aldeeiros</p>
+            <div class="col-md-3">
+                <label for="cpf" class="form-label">CPF</label>
+                <input type="text" class="form-control" id="cpf" name="cpf" required maxlength="14" placeholder="000.000.000-00"
+                       value="{{ aldeeiro.cpf if aldeeiro else '' }}" {{ 'readonly' if aldeeiro }}>
             </div>
-        </footer>
-    </body>
-</html>
+            <div class="col-md-3">
+                <label for="data_nascimento" class="form-label">Data de Nascimento</label>
+                <input type="date" class="form-control" id="data_nascimento" name="data_nascimento" required
+                       value="{{ aldeeiro.data_nascimento.strftime('%Y-%m-%d') if aldeeiro and aldeeiro.data_nascimento else '' }}">
+            </div>
+            <div class="col-md-2">
+                <label for="sexo" class="form-label">Sexo</label>
+                <select class="form-select" id="sexo" name="sexo" required>
+                    <option value="">Selecione</option>
+                    <option value="M" {{ 'selected' if aldeeiro and aldeeiro.sexo == 'M' }}>Masculino</option>
+                    <option value="F" {{ 'selected' if aldeeiro and aldeeiro.sexo == 'F' }}>Feminino</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="telefone" class="form-label">Telefone</label>
+                <input type="text" class="form-control" id="telefone" name="telefone" required placeholder="(00) 00000-0000"
+                       value="{{ aldeeiro.telefone if aldeeiro else '' }}">
+            </div>
+            <div class="col-md-4">
+                <label for="email_display" class="form-label">Email</label>
+                <input type="email" class="form-control" id="email_display" disabled
+                       value="{{ session.get('usuario_email', '') }}">
+                <small class="text-muted">Vinculado à sua conta</small>
+            </div>
+            <div class="col-md-3">
+                <label for="nucleo" class="form-label">Núcleo</label>
+                <select class="form-select" id="nucleo" name="nucleo" required>
+                    <option value="">Selecione</option>
+                    {% for n in nucleos %}
+                        <option value="{{ n.id }}" {{ 'selected' if aldeeiro and aldeeiro.nucleo == n.id }}>{{ n.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-12">
+                <label for="aldeias_fez" class="form-label">Aldeias que fez</label>
+                <select class="form-select" id="aldeias_fez" name="aldeias_fez" multiple size="5">
+                    {% for a in aldeias_fez %}
+                        <option value="{{ a.id }}" {{ 'selected' if a.id in aldeeiro_aldeias_fez_ids }}>{{ a.nome_aldeia }}</option>
+                    {% endfor %}
+                </select>
+                <small class="text-muted">Segure Ctrl para selecionar múltiplas</small>
+            </div>
+            <div class="col-md-12">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="ja_serviu_check" onchange="toggleServiu()"
+                           {{ 'checked' if aldeeiro and aldeeiro.ja_serviu }}>
+                    <label class="form-check-label" for="ja_serviu_check">Já serviu em aldeia?</label>
+                </div>
+                <input type="hidden" name="serviu" id="serviu_value" value="{{ 'true' if aldeeiro and aldeeiro.ja_serviu else 'false' }}">
+            </div>
+            <div class="col-md-6" id="div_aldeias_serviu" style="{{ '' if aldeeiro and aldeeiro.ja_serviu else 'display:none;' }}">
+                <label for="aldeias_serviu" class="form-label">Aldeias que serviu</label>
+                <select class="form-select" id="aldeias_serviu" name="aldeias_serviu" multiple size="5">
+                    {% for a in aldeias_serviu %}
+                        <option value="{{ a.id }}" {{ 'selected' if a.id in aldeeiro_aldeias_serviu_ids }}>{{ a.nome_aldeia }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-6" id="div_equipes" style="{{ '' if aldeeiro and aldeeiro.ja_serviu else 'display:none;' }}">
+                <label for="equipes" class="form-label">Equipes que participou</label>
+                <select class="form-select" id="equipes" name="equipes" multiple size="5">
+                    {% for e in equipes %}
+                        <option value="{{ e.id }}" {{ 'selected' if e.id in aldeeiro_equipes_ids }}>{{ e.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="mt-4">
+            <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> Salvar</button>
+            <a href="/init-aldeias" class="btn btn-secondary ms-2">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleServiu() {
+    const checked = document.getElementById('ja_serviu_check').checked;
+    document.getElementById('serviu_value').value = checked ? 'true' : 'false';
+    document.getElementById('div_aldeias_serviu').style.display = checked ? '' : 'none';
+    document.getElementById('div_equipes').style.display = checked ? '' : 'none';
+}
+</script>
+{% endblock %}
