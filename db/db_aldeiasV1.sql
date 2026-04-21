@@ -103,17 +103,18 @@ CREATE TABLE `tb_frequencia_aldeeiro` (
   CONSTRAINT `fk_freq_formacao` FOREIGN KEY (`id_formacao`) REFERENCES `tb_formacao` (`id`) ON DELETE CASCADE
 );
 
+-- INSERTS INICIAIS
+
+INSERT INTO `tb_nucleo` VALUES (1,'Belo Horizonte'),(2,'Campo Belo'),(3,'Lavras'),(4,'Alfenas'),(5,'Perdões');
+INSERT INTO `tb_perfil` VALUES (1,'Aldeeiro'),(2,'Formador'),(3,'Coordenador'), (4, 'Administrador');
+INSERT INTO `tb_aldeia` VALUES (1,'Aldeia de Aprofundamento'),(2,'Aldeia de Adolescentes'),(3,'Aldeia de Recomeço'),(4,'Aldeia de Aliança de Vida'),(5,'Aldeia de Crescimento'),(6,'Aldeia em Familia'),(7,'Aldeia de Jovens'),(8,'Aldeia da Melhor Idade'),(9,'Aldeia de Compromisso');
+INSERT INTO `tb_equipes` VALUES (1,'Banda','Musica e som'),(2,'Cozinha','Alimentação'),(3,'Liderança','Cuidar do aldeeiro'),(4,'Serviços Gerais','Montagem dos desafios e suporte na solução em eventuais problemas'),(5,'Pequenos Gestos','Organizar locais e encenações'),(6,'Apoio','Responsável pela limpeza do local da aldeia'),(7,'Mediadores','Conduzir a tribo e fazer as reflexões espirituais de cada desafio'),(8,'Virgilia','Orações antes e durante a aldeia'),(9,'Visitação','Pegar as cartas e conduzir a familia do aldeeiro para o momento final'),(10,'Guardião','Fiscalizar a aldeia para o Pe. Pedro'),(11,'Dirigente','Dirigir e conduzir toda a aldeia'),(12,'Segurança','Monitorar as entradas do local para que não ocorra acessos e saídas indevidas'),(13,'Conselheiros','Organizar a aldeia antes e durante e após fazer todos os relatórios'),(14,'Externa','Sair da aldeia para comprar/buscar materiais ou qualquer serviço necessário');
+
 ALTER TABLE db_aldeias.tb_aldeeiro
 ADD COLUMN sexo CHAR(1) NOT NULL
 CHECK (sexo IN ('F', 'M'))
 AFTER `data_nascimento`;
 
--- INSERTS INICIAIS
-
-INSERT INTO `tb_nucleo` VALUES (1,'Belo Horizonte'),(2,'Campo Belo'),(3,'Lavras'),(4,'Alfenas'),(5,'Perdões');
-INSERT INTO `tb_perfil` VALUES (1,'Aldeeiro'),(2,'Formador'),(3,'Coordenador');
-INSERT INTO `tb_aldeia` VALUES (1,'Aldeia de Aprofundamento'),(2,'Aldeia de Adolescentes'),(3,'Aldeia de Recomeço'),(4,'Aldeia de Aliança de Vida'),(5,'Aldeia de Crescimento'),(6,'Aldeia em Familia'),(7,'Aldeia de Jovens'),(8,'Aldeia da Melhor Idade'),(9,'Aldeia de Compromisso');
-INSERT INTO `tb_equipes` VALUES (1,'Banda','Musica e som'),(2,'Cozinha','Alimentação'),(3,'Liderança','Cuidar do aldeeiro'),(4,'Serviços Gerais','Montagem dos desafios e suporte na solução em eventuais problemas'),(5,'Pequenos Gestos','Organizar locais e encenações'),(6,'Apoio','Responsável pela limpeza do local da aldeia'),(7,'Mediadores','Conduzir a tribo e fazer as reflexões espirituais de cada desafio'),(8,'Virgilia','Orações antes e durante a aldeia'),(9,'Visitação','Pegar as cartas e conduzir a familia do aldeeiro para o momento final'),(10,'Guardião','Fiscalizar a aldeia para o Pe. Pedro'),(11,'Dirigente','Dirigir e conduzir toda a aldeia'),(12,'Segurança','Monitorar as entradas do local para que não ocorra acessos e saídas indevidas'),(13,'Conselheiros','Organizar a aldeia antes e durante e após fazer todos os relatórios'),(14,'Externa','Sair da aldeia para comprar/buscar materiais ou qualquer serviço necessário');
 
 CREATE TABLE `tb_usuario` (
   `id` int NOT NULL AUTO_INCREMENT,
@@ -126,3 +127,13 @@ CREATE TABLE `tb_usuario` (
   UNIQUE KEY `uq_usuario_email` (`email`)
 );
 
+CREATE TABLE `tb_recuperacao_senha` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `usuario_id` int NOT NULL,
+  `codigo` varchar(6) NOT NULL,
+  `criado_em` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `usado` tinyint(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  KEY `fk_recup_usuario` (`usuario_id`),
+  CONSTRAINT `fk_recup_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `tb_usuario` (`id`) ON DELETE CASCADE
+);
