@@ -145,3 +145,19 @@ ADD COLUMN `complemento` VARCHAR(50) NULL AFTER `numero`,
 ADD COLUMN `bairro` VARCHAR(50) NULL AFTER `complemento`,
 ADD COLUMN `cidade` VARCHAR(50) NULL AFTER `bairro`,
 ADD COLUMN `uf` CHAR(2) NULL AFTER `cidade`;
+
+CREATE INDEX idx_aldeeiro_nome ON tb_aldeeiro (nome);
+CREATE INDEX idx_aldeeiro_cpf ON tb_aldeeiro (cpf);
+CREATE INDEX idx_aldeeiro_cidade_uf ON tb_aldeeiro (cidade, uf);
+CREATE INDEX idx_usuario_email ON tb_usuario (email);
+CREATE INDEX idx_presenca_formacao ON tb_presenca (id_formacao);
+CREATE INDEX idx_presenca_aldeeiro ON tb_presenca (id_aldeeiro);
+CREATE INDEX idx_presenca_formacao_aldeeiro ON tb_presenca (id_formacao, id_aldeeiro);
+CREATE INDEX idx_formacao_nucleo ON tb_formacao (id_nucleo);
+CREATE INDEX idx_formacao_data ON tb_formacao (data_formacao);
+CREATE INDEX idx_aldeeiro_equipe_aldeeiro ON tb_aldeeiro_equipe (id_aldeeiro);
+CREATE INDEX idx_aldeeiro_equipe_equipe ON tb_aldeeiro_equipe (id_equipe);
+CREATE INDEX idx_aldeeiro_aldeia_aldeeiro ON tb_aldeeiro_aldeia (id_aldeeiro);
+CREATE INDEX idx_aldeeiro_aldeia_aldeia ON tb_aldeeiro_aldeia (id_aldeia);
+CREATE INDEX idx_usuario_perfil_usuario ON tb_usuario_perfil (id_usuario);
+
