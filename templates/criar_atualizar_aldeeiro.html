@@ -15,7 +15,7 @@
             <div class="col-12 col-md-6">
                 <label for="nome" class="form-label">Nome Completo</label>
                 <input type="text" class="form-control" id="nome" name="nome" required pattern="[A-Za-zÀ-ÿ\s]+"
-                       value="{{ aldeeiro.nome if aldeeiro else '' }}">
+                       value="{{ aldeeiro.nome if aldeeiro else session.get('usuario_nome', '') }}">
             </div>
             <div class="col-6 col-md-3">
                 <label for="cpf" class="form-label">CPF</label>
