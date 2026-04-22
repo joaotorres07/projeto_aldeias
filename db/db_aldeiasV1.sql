@@ -84,10 +84,13 @@ CREATE TABLE `tb_formacao` (
   `tema` varchar(50) NOT NULL,
   `data_formacao` date DEFAULT NULL,
   `nucleo` int NOT NULL,
+  `cpf_formador` varchar(20) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_formacao_nucleo_data` (`tema`,`nucleo`,`data_formacao`),
   KEY `fk_tb_formacao_nucleo` (`nucleo`),
-  CONSTRAINT `fk_tb_formacao_nucleo` FOREIGN KEY (`nucleo`) REFERENCES `tb_nucleo` (`id`)
+  KEY `fk_formacao_formador` (`cpf_formador`),
+  CONSTRAINT `fk_tb_formacao_nucleo` FOREIGN KEY (`nucleo`) REFERENCES `tb_nucleo` (`id`),
+  CONSTRAINT `fk_formacao_formador` FOREIGN KEY (`cpf_formador`) REFERENCES `tb_aldeeiro` (`cpf`)
 );
 
 CREATE TABLE `tb_frequencia_aldeeiro` (
@@ -146,18 +149,21 @@ ADD COLUMN `bairro` VARCHAR(50) NULL AFTER `complemento`,
 ADD COLUMN `cidade` VARCHAR(50) NULL AFTER `bairro`,
 ADD COLUMN `uf` CHAR(2) NULL AFTER `cidade`;
 
-CREATE INDEX idx_aldeeiro_nome ON tb_aldeeiro (nome);
-CREATE INDEX idx_aldeeiro_cpf ON tb_aldeeiro (cpf);
-CREATE INDEX idx_aldeeiro_cidade_uf ON tb_aldeeiro (cidade, uf);
-CREATE INDEX idx_usuario_email ON tb_usuario (email);
-CREATE INDEX idx_presenca_formacao ON tb_presenca (id_formacao);
-CREATE INDEX idx_presenca_aldeeiro ON tb_presenca (id_aldeeiro);
-CREATE INDEX idx_presenca_formacao_aldeeiro ON tb_presenca (id_formacao, id_aldeeiro);
-CREATE INDEX idx_formacao_nucleo ON tb_formacao (id_nucleo);
-CREATE INDEX idx_formacao_data ON tb_formacao (data_formacao);
-CREATE INDEX idx_aldeeiro_equipe_aldeeiro ON tb_aldeeiro_equipe (id_aldeeiro);
-CREATE INDEX idx_aldeeiro_equipe_equipe ON tb_aldeeiro_equipe (id_equipe);
-CREATE INDEX idx_aldeeiro_aldeia_aldeeiro ON tb_aldeeiro_aldeia (id_aldeeiro);
-CREATE INDEX idx_aldeeiro_aldeia_aldeia ON tb_aldeeiro_aldeia (id_aldeia);
-CREATE INDEX idx_usuario_perfil_usuario ON tb_usuario_perfil (id_usuario);
 
+CREATE INDEX idx_aldeeiro_nome ON tb_aldeeiro (nome);
+CREATE INDEX idx_aldeeiro_cidade_uf ON tb_aldeeiro (cidade, uf);
+CREATE INDEX idx_freq_formacao ON tb_frequencia_aldeeiro (id_formacao);
+CREATE INDEX idx_freq_aldeeiro ON tb_frequencia_aldeeiro (cpf_aldeeiro);
+CREATE INDEX idx_formacao_nucleo ON tb_formacao (nucleo);
+CREATE INDEX idx_formacao_data ON tb_formacao (data_formacao);
+CREATE INDEX idx_ae_equipe ON tb_aldeeiro_equipe (id_equipe);
+CREATE INDEX idx_aaf_aldeia ON tb_aldeeiro_aldeia_fez (id_aldeia);
+CREATE INDEX idx_aas_aldeia ON tb_aldeeiro_aldeia_serviu (id_aldeia);
+CREATE INDEX idx_ap_perfil ON tb_aldeeiro_perfil (id_perfil);
+CREATE INDEX idx_recup_usuario ON tb_recuperacao_senha (usuario_id);
+
+
+ALTER TABLE `tb_formacao`
+ADD COLUMN `cpf_formador` VARCHAR(20) NULL AFTER `nucleo`,
+ADD KEY `fk_formacao_formador` (`cpf_formador`),
+ADD CONSTRAINT `fk_formacao_formador` FOREIGN KEY (`cpf_formador`) REFERENCES `tb_aldeeiro` (`cpf`);
