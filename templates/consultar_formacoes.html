@@ -1,10 +1,10 @@
 {% extends "base.html" %}
-{% block title %}Relatório de Presença - Aldeias{% endblock %}
+{% block title %}Consultar Formações - Aldeias{% endblock %}
 {% block content %}
-<h2 class="mb-4"><i class="bi bi-clipboard-data"></i> Relatório de Presença</h2>
+<h2 class="mb-4"><i class="bi bi-journal-text"></i> Consultar Formações</h2>
 
 <div class="card p-4 mb-4">
-    <form method="POST" action="/relatorio/presenca">
+    <form method="POST" action="/formacao/consultar">
         <div class="row g-3 align-items-end">
             <div class="col-12 col-md-3">
                 <label for="nucleo" class="form-label">Núcleo <span class="text-danger">*</span></label>
@@ -39,40 +39,29 @@
             <table class="table table-hover">
                 <thead class="table-dark">
                     <tr>
-                        <th>Nome</th>
+                        <th>Data</th>
+                        <th>Tema</th>
                         <th>Núcleo</th>
-                        <th class="text-center">Formações Presentes</th>
-                        <th>Última Presença</th>
+                        <th>Formador</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for r in resultados %}
+                    {% for f in resultados %}
                     <tr>
-                        <td>{{ r.nome }}</td>
-                        <td>{{ r.nucleo }}</td>
-                        <td class="text-center">
-                            {% if r.total_formacoes > 0 %}
-                                <span class="badge bg-success fs-6">{{ r.total_formacoes }}</span>
-                            {% else %}
-                                <span class="badge bg-secondary fs-6">0</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if r.ultima_presenca %}
-                                {{ r.ultima_presenca.strftime('%d/%m/%Y') }}
-                            {% else %}
-                                <span class="text-muted fst-italic">Nenhuma presença registrada</span>
-                            {% endif %}
-                        </td>
+                        <td>{{ f.data_formacao.strftime('%d/%m/%Y') if f.data_formacao else '' }}</td>
+                        <td>{{ f.tema }}</td>
+                        <td>{{ f.nucleo }}</td>
+                        <td>{{ f.formador }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
-        <p class="text-muted">Total: {{ resultados|length }} aldeeiro(s) encontrado(s)</p>
+        <p class="text-muted">Total: {{ resultados|length }} formação(ões) encontrada(s)</p>
     </div>
     {% else %}
-    <div class="alert alert-warning"><i class="bi bi-exclamation-triangle"></i> Nenhum aldeeiro encontrado para os filtros selecionados.</div>
+    <div class="alert alert-warning"><i class="bi bi-exclamation-triangle"></i> Nenhuma formação encontrada para os filtros selecionados.</div>
     {% endif %}
 {% endif %}
 {% endblock %}
+

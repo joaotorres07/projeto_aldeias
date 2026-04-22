@@ -300,9 +300,11 @@ def pesquisar_aldeeeiros():
 @perfil_required('Formador', 'Coordenador')
 def abrir_formacao():
     if request.method == "POST":
+        aldeeiro = get_aldeeiro_por_email(session.get('usuario_email'))
         body = {
             "nucleo": request.form.get("nucleo"),
-            "tema": request.form.get("tema")
+            "tema": request.form.get("tema"),
+            "cpf_formador": aldeeiro['cpf'] if aldeeiro else None
         }
         result = lambda_handler_formacao({"body": body}, None)
         if result["statusCode"] == 200:
@@ -439,6 +441,74 @@ def enviar_whatsapp():
     return render_template("enviar_whatsapp.html")
 
 
+# ==================== CONSULTAR FORMAÇÕES ====================
+
+@application.route("/formacao/consultar", methods=["GET", "POST"])
+@login_required
+@perfil_required('Formador', 'Coordenador')
+def consultar_formacoes():
+    nucleos = get_nucleos()
+    resultados = None
+
+    if request.method == "POST":
+        nucleo = request.form.get("nucleo")
+        data_inicio = request.form.get("data_inicio") or None
+        data_fim = request.form.get("data_fim") or None
+
+        connection = None
+        try:
+            connection = pymysql.connect(
+                host=os.environ['DB_HOST'],
+                user=os.environ['DB_USER'],
+                password=os.environ['DB_PASSWORD'],
+                database=os.environ['DB_NAME'],
+                cursorclass=pymysql.cursors.DictCursor
+            )
+            with connection.cursor() as cursor:
+                sql = """
+                    SELECT f.data_formacao, f.tema, n.nome AS nucleo,
+                           COALESCE(a.nome, 'Não informado') AS formador
+                    FROM db_aldeias.tb_formacao f
+                    JOIN db_aldeias.tb_nucleo n ON n.id = f.nucleo
+                    LEFT JOIN db_aldeias.tb_aldeeiro a ON a.cpf = f.cpf_formador
+                    WHERE f.nucleo = %s
+                """
+                params = [nucleo]
+
+                if data_inicio:
+                    sql += " AND f.data_formacao >= %s"
+                    params.append(data_inicio)
+                if data_fim:
+                    sql += " AND f.data_formacao <= %s"
+                    params.append(data_fim)
+
+                sql += " ORDER BY f.data_formacao DESC, f.tema"
+
+                cursor.execute(sql, params)
+                resultados = cursor.fetchall()
+        except Exception as e:
+            flash(f"Erro ao consultar formações: {str(e)}", "error")
+            resultados = []
+        finally:
+            if connection:
+                connection.close()
+
+    filtros = {}
+    if request.method == "POST":
+        filtros = {
+            'nucleo': request.form.get('nucleo', ''),
+            'data_inicio': request.form.get('data_inicio', ''),
+            'data_fim': request.form.get('data_fim', '')
+        }
+
+    return render_template(
+        "consultar_formacoes.html",
+        nucleos=nucleos,
+        resultados=resultados,
+        filtros=filtros
+    )
+
+
 # ==================== RELATÓRIOS ====================
 
 @application.route("/relatorio/presenca", methods=["GET", "POST"])
@@ -465,7 +535,8 @@ def relatorio_presenca():
             with connection.cursor() as cursor:
                 sql = """
                     SELECT a.nome, n.nome AS nucleo,
-                           COUNT(DISTINCT fa.id) AS total_formacoes
+                           COUNT(DISTINCT fa.id) AS total_formacoes,
+                           MAX(f.data_formacao) AS ultima_presenca
                     FROM db_aldeias.tb_aldeeiro a
                     JOIN db_aldeias.tb_nucleo n ON n.id = a.nucleo
                     LEFT JOIN db_aldeias.tb_frequencia_aldeeiro fa ON fa.cpf_aldeeiro = a.cpf AND fa.presente = 1

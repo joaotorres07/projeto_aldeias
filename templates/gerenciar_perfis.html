@@ -9,7 +9,7 @@
             <div class="col-12 col-md-3">
                 <label class="form-label">CPF do Aldeeiro</label>
                 <input type="text" class="form-control" id="cpf_aldeeiro" name="cpf_aldeeiro" required
-                       maxlength="14" placeholder="000.000.000-00" oninput="buscarAldeeiro()">
+                       maxlength="14" placeholder="000.000.000-00" oninput="mascaraCPF(this); buscarAldeeiro()">
             </div>
             <div class="col-12 col-md-3">
                 <label class="form-label">Nome do Aldeeiro</label>
@@ -43,14 +43,22 @@
 
 {% block extra_js %}
 <script>
+function mascaraCPF(campo) {
+    let v = campo.value.replace(/\D/g, '').substring(0, 11);
+    if (v.length > 9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
+    else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
+    else if (v.length > 3) v = v.replace(/(\d{3})(\d{1,3})/, '$1.$2');
+    campo.value = v;
+}
+
 let timeout = null;
 function buscarAldeeiro() {
     clearTimeout(timeout);
-    const cpf = document.getElementById('cpf_aldeeiro').value.trim();
+    const cpfDigits = document.getElementById('cpf_aldeeiro').value.replace(/\D/g, '');
     const nomeField = document.getElementById('nome_aldeeiro');
     const btn = document.getElementById('btn_executar');
 
-    if (cpf.length < 11) {
+    if (cpfDigits.length < 11) {
         nomeField.value = '';
         nomeField.classList.remove('is-valid', 'is-invalid');
         btn.disabled = true;
@@ -58,7 +66,7 @@ function buscarAldeeiro() {
     }
 
     timeout = setTimeout(() => {
-        fetch('/admin/buscar-aldeeiro?cpf=' + encodeURIComponent(cpf))
+        fetch('/admin/buscar-aldeeiro?cpf=' + encodeURIComponent(cpfDigits))
             .then(r => r.json().then(data => ({status: r.status, data})))
             .then(({status, data}) => {
                 if (status === 200 && data.nome) {
@@ -81,5 +89,10 @@ function buscarAldeeiro() {
             });
     }, 400);
 }
+
+document.querySelector('form').addEventListener('submit', function() {
+    var cpf = document.getElementById('cpf_aldeeiro');
+    cpf.value = cpf.value.replace(/\D/g, '');
+});
 </script>
 {% endblock %}

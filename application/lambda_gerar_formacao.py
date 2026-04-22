@@ -17,9 +17,10 @@ def lambda_handler(event, context):
         logger.info(f"Event received: {json.dumps(event)}")
         body = event["body"]
         nucleo = body['nucleo']
+        cpf_formador = body.get('cpf_formador')
         data_formacao = datetime.datetime.now().strftime('%Y-%m-%d')
         logger.info(f"Abrindo formação: Data: {data_formacao} - Núcleo: {nucleo}")
-        insert_formacao(nucleo, body['tema'], data_formacao)
+        insert_formacao(nucleo, body['tema'], data_formacao, cpf_formador)
 
         return {
             "statusCode": 200,
@@ -36,16 +37,17 @@ def lambda_handler(event, context):
         }
 
 
-def insert_formacao(nucleo, tema, data_formacao):
+def insert_formacao(nucleo, tema, data_formacao, cpf_formador=None):
     connection = get_db_connection()
     try:
         with connection.cursor() as cursor:
-            sql = " INSERT INTO db_aldeias.tb_formacao (tema, data_formacao, nucleo) VALUES (%s, %s, %s) "
+            sql = " INSERT INTO db_aldeias.tb_formacao (tema, data_formacao, nucleo, cpf_formador) VALUES (%s, %s, %s, %s) "
 
             values = (
                 tema,
                 data_formacao,
-                nucleo
+                nucleo,
+                cpf_formador
             )
             cursor.execute(sql, values)
         connection.commit()
