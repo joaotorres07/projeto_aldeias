@@ -5,17 +5,17 @@
 
 <div class="card p-4">
     <form method="POST">
-        <div class="row g-3 align-items-end">
-            <div class="col-md-3">
+        <div class="row g-3">
+            <div class="col-12 col-md-3">
                 <label class="form-label">CPF do Aldeeiro</label>
                 <input type="text" class="form-control" id="cpf_aldeeiro" name="cpf_aldeeiro" required
                        maxlength="14" placeholder="000.000.000-00" oninput="buscarAldeeiro()">
             </div>
-            <div class="col-md-3">
+            <div class="col-12 col-md-3">
                 <label class="form-label">Nome do Aldeeiro</label>
                 <input type="text" class="form-control" id="nome_aldeeiro" disabled placeholder="Digite o CPF...">
             </div>
-            <div class="col-md-3">
+            <div class="col-12 col-md-3">
                 <label class="form-label">Perfis</label>
                 <select name="id_perfil" class="form-select" multiple size="{{ perfis|length }}" required>
                     {% for p in perfis %}
@@ -24,14 +24,14 @@
                 </select>
                 <small class="text-muted">Segure Ctrl para selecionar múltiplos</small>
             </div>
-            <div class="col-md-2">
+            <div class="col-6 col-md-2">
                 <label class="form-label">Ação</label>
                 <select name="acao" class="form-select" required>
                     <option value="adicionar">Adicionar</option>
                     <option value="remover">Remover</option>
                 </select>
             </div>
-            <div class="col-md-1 d-flex align-items-end">
+            <div class="col-6 col-md-1 d-flex align-items-end">
                 <button type="submit" class="btn btn-primary w-100" id="btn_executar" disabled>
                     <i class="bi bi-check-lg"></i>
                 </button>

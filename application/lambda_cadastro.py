@@ -57,12 +57,19 @@ def insert_update_user(body):
         with connection.cursor() as cursor:
             sql = """
                   INSERT INTO db_aldeias.tb_aldeeiro
-                    (nome, cpf, data_nascimento, sexo, telefone, email, nucleo, ja_serviu, data_insert, ativo)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    (nome, cpf, data_nascimento, sexo, telefone, email, nucleo, ja_serviu, data_insert, ativo,
+                     logradouro, numero, complemento, bairro, cidade, uf)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 ON DUPLICATE KEY UPDATE
                     telefone = VALUES(telefone),
                     email = VALUES(email),
                     nucleo = VALUES(nucleo),
+                    logradouro = VALUES(logradouro),
+                    numero = VALUES(numero),
+                    complemento = VALUES(complemento),
+                    bairro = VALUES(bairro),
+                    cidade = VALUES(cidade),
+                    uf = VALUES(uf),
                     data_update = %s
             """
             now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -78,6 +85,12 @@ def insert_update_user(body):
                 1 if ja_serviu == 'true' else 0,
                 now,  # data_insert
                 1,  # ativo
+                body.get("logradouro", [None])[0] if isinstance(body.get("logradouro"), list) else body.get("logradouro"),
+                body.get("numero", [None])[0] if isinstance(body.get("numero"), list) else body.get("numero"),
+                body.get("complemento", [None])[0] if isinstance(body.get("complemento"), list) else body.get("complemento"),
+                body.get("bairro", [None])[0] if isinstance(body.get("bairro"), list) else body.get("bairro"),
+                body.get("cidade", [None])[0] if isinstance(body.get("cidade"), list) else body.get("cidade"),
+                body.get("uf", [None])[0] if isinstance(body.get("uf"), list) else body.get("uf"),
                 now # data_update (somente no update)
             )
             cursor.execute(sql, values)

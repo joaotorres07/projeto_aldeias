@@ -18,6 +18,13 @@
         .sidebar .nav-link i { margin-right: 10px; }
         .content-area { padding: 30px; }
         .alert { border-radius: 10px; }
+        @media (max-width: 767.98px) {
+            .content-area { padding: 15px 10px; }
+            h2 { font-size: 1.4rem; }
+            .card { padding: 1rem !important; }
+            .table { font-size: 0.85rem; }
+            .duo-selecionados, .form-select[multiple] { font-size: 0.85rem; }
+        }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
@@ -25,13 +32,43 @@
     {% if session.get('usuario_id') %}
     <nav class="navbar navbar-dark" style="background-color: #2d3748;">
         <div class="container-fluid">
+            <button class="btn btn-outline-light d-md-none me-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarMobile">
+                <i class="bi bi-list fs-5"></i>
+            </button>
             <a class="navbar-brand" href="/init-aldeias"><i class="bi bi-house-heart-fill"></i> Sistema Aldeias</a>
             <div class="d-flex align-items-center">
-                <span class="text-light me-3"><i class="bi bi-person-circle"></i> {{ session.get('usuario_nome', '') }}</span>
+                <span class="text-light me-3 d-none d-sm-inline"><i class="bi bi-person-circle"></i> {{ session.get('usuario_nome', '') }}</span>
                 <a href="/logout" class="btn btn-outline-light btn-sm"><i class="bi bi-box-arrow-right"></i> Sair</a>
             </div>
         </div>
     </nav>
+
+    <!-- Offcanvas mobile menu -->
+    <div class="offcanvas offcanvas-start text-bg-dark" tabindex="-1" id="sidebarMobile">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title"><i class="bi bi-house-heart-fill"></i> Menu</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
+        </div>
+        <div class="offcanvas-body p-0" style="background: #2d3748;">
+            <nav class="nav flex-column pt-2">
+                <a class="nav-link text-light py-3 px-4" href="/init-aldeias"><i class="bi bi-speedometer2 me-2"></i> Painel</a>
+                <a class="nav-link text-light py-3 px-4" href="/aldeeiro/form"><i class="bi bi-person-fill-gear me-2"></i> Meu Cadastro</a>
+                <a class="nav-link text-light py-3 px-4" href="/formacao/presenca"><i class="bi bi-check2-square me-2"></i> Registrar Presença</a>
+                <a class="nav-link text-light py-3 px-4" href="/arquivos"><i class="bi bi-folder2-open me-2"></i> Arquivos e Informativos</a>
+                {% set perfil = session.get('perfil', []) %}
+                {% if 'Formador' in perfil or 'Coordenador' in perfil %}
+                <a class="nav-link text-light py-3 px-4" href="/aldeeiro/listar"><i class="bi bi-people me-2"></i> Consultar Aldeeiro(s)</a>
+                <a class="nav-link text-light py-3 px-4" href="/formacao/abrir"><i class="bi bi-journal-plus me-2"></i> Abrir Formação</a>
+                <a class="nav-link text-light py-3 px-4" href="/whatsapp/enviar"><i class="bi bi-whatsapp me-2"></i> Enviar WhatsApp</a>
+                <a class="nav-link text-light py-3 px-4" href="/relatorio/presenca"><i class="bi bi-clipboard-data me-2"></i> Relatório de Presença</a>
+                {% endif %}
+                {% if 'Administrador' in perfil %}
+                <a class="nav-link text-light py-3 px-4" href="/admin/perfis"><i class="bi bi-shield-lock me-2"></i> Gerenciar Perfis</a>
+                {% endif %}
+            </nav>
+        </div>
+    </div>
+
     <div class="d-flex">
         <div class="sidebar d-none d-md-block" style="width: 250px;">
             <nav class="nav flex-column pt-3">

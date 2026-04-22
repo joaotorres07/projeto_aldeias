@@ -137,3 +137,11 @@ CREATE TABLE `tb_recuperacao_senha` (
   KEY `fk_recup_usuario` (`usuario_id`),
   CONSTRAINT `fk_recup_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `tb_usuario` (`id`) ON DELETE CASCADE
 );
+
+ALTER TABLE `tb_aldeeiro`
+ADD COLUMN `logradouro` VARCHAR(100) NULL AFTER `ativo`,
+ADD COLUMN `numero` VARCHAR(10) NULL AFTER `logradouro`,
+ADD COLUMN `complemento` VARCHAR(50) NULL AFTER `numero`,
+ADD COLUMN `bairro` VARCHAR(50) NULL AFTER `complemento`,
+ADD COLUMN `cidade` VARCHAR(50) NULL AFTER `bairro`,
+ADD COLUMN `uf` CHAR(2) NULL AFTER `cidade`;

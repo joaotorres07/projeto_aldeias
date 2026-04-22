@@ -60,7 +60,8 @@ def select_aldeeiros_by(filtros):
     try:
         with connection.cursor() as cursor:
             sql = """SELECT a.cpf as cpf, a.nome as nome_aldeeiro, n.nome as nucleo, a.telefone as telefone_aldeeiro, e.nome as nome_equipe, 
-                            ad.nome_aldeia as nome_aldeia_fez, ad2.nome_aldeia as aldeia_serviu 
+                            ad.nome_aldeia as nome_aldeia_fez, ad2.nome_aldeia as aldeia_serviu,
+                            a.logradouro, a.numero, a.complemento, a.bairro, a.cidade, a.uf 
                         FROM db_aldeias.tb_aldeeiro a
                         LEFT JOIN db_aldeias.tb_aldeeiro_aldeia_fez aaf ON aaf.cpf_aldeeiro = a.cpf
                         LEFT JOIN db_aldeias.tb_aldeeiro_aldeia_serviu aas ON aas.cpf_aldeeiro = a.cpf
@@ -97,11 +98,28 @@ def agrupar_aldeeiros(rows):
         cpf = r["cpf"]
 
         if cpf not in agrupado:
+            # Montar endereço concatenado
+            partes_endereco = []
+            if r.get("logradouro"):
+                partes_endereco.append(r["logradouro"])
+            if r.get("numero"):
+                partes_endereco.append(r["numero"])
+            if r.get("complemento"):
+                partes_endereco.append(r["complemento"])
+            if r.get("bairro"):
+                partes_endereco.append(r["bairro"])
+            if r.get("cidade"):
+                partes_endereco.append(r["cidade"])
+            if r.get("uf"):
+                partes_endereco.append(r["uf"])
+            endereco = ", ".join(partes_endereco) if partes_endereco else ""
+
             agrupado[cpf] = {
                 "cpf": cpf,
                 "nome_aldeeiro": r["nome_aldeeiro"],
                 "telefone": r["telefone_aldeeiro"],
                 "nucleo": r["nucleo"],
+                "endereco": endereco,
                 "equipes": set(),
                 "aldeias_fez": set(),
                 "aldeias_serviu": set()

@@ -6,12 +6,12 @@
 <div class="card p-4 mb-4">
     <form method="POST" action="/pesquisarAldeeiros">
         <div class="row g-3 align-items-end">
-            <div class="col-md-4">
+            <div class="col-12 col-md-4">
                 <label for="nome" class="form-label">Nome</label>
                 <input type="text" class="form-control" id="nome" name="nome" placeholder="Buscar por nome..."
                        value="{{ filtro_nome|default('') }}">
             </div>
-            <div class="col-md-3">
+            <div class="col-8 col-md-3">
                 <label for="nucleo" class="form-label">Núcleo</label>
                 <select class="form-select" id="nucleo" name="nucleo">
                     <option value="">Todos</option>
@@ -20,15 +20,15 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-md-2">
-                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search"></i> Pesquisar</button>
+            <div class="col-4 col-md-2">
+                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search"></i> <span class="d-none d-md-inline">Pesquisar</span></button>
             </div>
-            <div class="col-md-3">
+            <div class="col-12 col-md-3">
                 <a href="/aldeeiro/listar" class="btn btn-outline-secondary w-100"><i class="bi bi-x-circle"></i> Limpar Filtros</a>
             </div>
         </div>
         <div class="row g-3 mt-1">
-            <div class="col-md-4">
+            <div class="col-12 col-md-4">
                 <label for="aldeias_fez" class="form-label">Aldeias que fez</label>
                 <select class="form-select" id="aldeias_fez" name="aldeias_fez" multiple size="4">
                     {% for a in aldeias|default([]) %}
@@ -37,7 +37,7 @@
                 </select>
                 <small class="text-muted">Ctrl + clique para múltiplos</small>
             </div>
-            <div class="col-md-4">
+            <div class="col-12 col-md-4">
                 <label for="aldeias_serviu" class="form-label">Aldeias que serviu</label>
                 <select class="form-select" id="aldeias_serviu" name="aldeias_serviu" multiple size="4">
                     {% for a in aldeias|default([]) %}
@@ -46,7 +46,7 @@
                 </select>
                 <small class="text-muted">Ctrl + clique para múltiplos</small>
             </div>
-            <div class="col-md-4">
+            <div class="col-12 col-md-4">
                 <label for="equipes" class="form-label">Equipes que serviu</label>
                 <select class="form-select" id="equipes" name="equipes" multiple size="4">
                     {% for e in equipes_lista|default([]) %}
@@ -68,9 +68,10 @@
                     <th>Nome</th>
                     <th>Núcleo</th>
                     <th>Telefone</th>
-                    <th>Equipes</th>
+                    <th>Endereço</th>
                     <th>Aldeias que Fez</th>
                     <th>Aldeias que Serviu</th>
+                    <th>Equipes</th>
                 </tr>
             </thead>
             <tbody>
@@ -79,11 +80,7 @@
                     <td>{{ a.nome_aldeeiro }}</td>
                     <td>{{ a.nucleo }}</td>
                     <td>{{ a.telefone }}</td>
-                    <td>
-                        {% for eq in a.equipes %}
-                            <span class="badge bg-primary">{{ eq }}</span>
-                        {% endfor %}
-                    </td>
+                    <td>{{ a.endereco|default('') }}</td>
                     <td>
                         {% for af in a.aldeias_fez %}
                             <span class="badge bg-success">{{ af }}</span>
@@ -92,6 +89,11 @@
                     <td>
                         {% for asv in a.aldeias_serviu %}
                             <span class="badge bg-info">{{ asv }}</span>
+                        {% endfor %}
+                    </td>
+                    <td>
+                        {% for eq in a.equipes %}
+                            <span class="badge bg-primary">{{ eq }}</span>
                         {% endfor %}
                     </td>
                 </tr>
