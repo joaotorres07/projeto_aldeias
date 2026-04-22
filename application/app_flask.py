@@ -441,6 +441,59 @@ def enviar_whatsapp():
     return render_template("enviar_whatsapp.html")
 
 
+# ==================== INFORMAÇÕES GERAIS ====================
+
+@application.route("/informacoes", methods=["GET"])
+@login_required
+def informacoes_gerais():
+    nucleos = get_nucleos()
+    return render_template("informacoes_gerais.html", nucleos=nucleos)
+
+
+@application.route("/api/info-nucleo", methods=["GET"])
+@login_required
+def api_info_nucleo():
+    nucleo_id = request.args.get("id", "")
+    connection = None
+    try:
+        connection = pymysql.connect(
+            host=os.environ['DB_HOST'],
+            user=os.environ['DB_USER'],
+            password=os.environ['DB_PASSWORD'],
+            database=os.environ['DB_NAME'],
+            cursorclass=pymysql.cursors.DictCursor
+        )
+        with connection.cursor() as cursor:
+            # Dados do núcleo
+            cursor.execute(
+                "SELECT endereco, dias_reuniao FROM db_aldeias.tb_nucleo WHERE id = %s", (nucleo_id,)
+            )
+            nucleo = cursor.fetchone() or {}
+
+            # Coordenadores do núcleo
+            cursor.execute("""
+                SELECT a.nome, a.telefone
+                FROM db_aldeias.tb_aldeeiro a
+                JOIN db_aldeias.tb_aldeeiro_perfil ap ON ap.cpf_aldeeiro = a.cpf
+                JOIN db_aldeias.tb_perfil p ON p.id = ap.id_perfil
+                WHERE a.nucleo = %s AND p.descricao = 'Coordenador' AND a.ativo = 1
+                ORDER BY a.nome
+            """, (nucleo_id,))
+            coordenadores = cursor.fetchall()
+
+        resultado = {
+            "endereco": nucleo.get("endereco", ""),
+            "dias_reuniao": nucleo.get("dias_reuniao", ""),
+            "coordenadores": coordenadores
+        }
+        return json.dumps(resultado, ensure_ascii=False), 200, {"Content-Type": "application/json"}
+    except Exception as e:
+        return json.dumps({"error": str(e)}), 500, {"Content-Type": "application/json"}
+    finally:
+        if connection:
+            connection.close()
+
+
 # ==================== CONSULTAR FORMAÇÕES ====================
 
 @application.route("/formacao/consultar", methods=["GET", "POST"])
@@ -639,7 +692,7 @@ def gerenciar_perfis():
         if connection:
             connection.close()
 
-    return render_template("gerenciar_perfis.html", perfis=perfis)
+    return render_template("gerenciar_perfis.html", perfis=perfis, nucleos=get_nucleos())
 
 
 @application.route("/admin/buscar-aldeeiro", methods=["GET"])
@@ -698,6 +751,37 @@ def buscar_aldeeiro_status():
             connection.close()
 
 
+@application.route("/admin/buscar-nucleo", methods=["GET"])
+@login_required
+@perfil_required('Administrador')
+def buscar_nucleo():
+    nucleo_id = request.args.get("id", "")
+    connection = None
+    try:
+        connection = pymysql.connect(
+            host=os.environ['DB_HOST'],
+            user=os.environ['DB_USER'],
+            password=os.environ['DB_PASSWORD'],
+            database=os.environ['DB_NAME'],
+            cursorclass=pymysql.cursors.DictCursor
+        )
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "SELECT id, nome, endereco, dias_reuniao, ativo FROM db_aldeias.tb_nucleo WHERE id = %s",
+                (nucleo_id,)
+            )
+            row = cursor.fetchone()
+            if row:
+                return json.dumps(row, ensure_ascii=False), 200, {"Content-Type": "application/json"}
+            else:
+                return json.dumps({}), 404, {"Content-Type": "application/json"}
+    except Exception:
+        return json.dumps({}), 500, {"Content-Type": "application/json"}
+    finally:
+        if connection:
+            connection.close()
+
+
 @application.route("/admin/ativar-desativar", methods=["POST"])
 @login_required
 @perfil_required('Administrador')
@@ -732,10 +816,20 @@ def ativar_desativar_aldeeiro():
 @login_required
 @perfil_required('Administrador')
 def cadastrar_nucleo():
+    acao_nucleo = request.form.get("acao_nucleo")
     nome = request.form.get("nome_nucleo", "").strip()
+    endereco = request.form.get("endereco_nucleo", "").strip() or None
+    dias_reuniao = request.form.get("dias_reuniao", "").strip() or None
+    ativo = 1 if request.form.get("ativo_nucleo") == "1" else 0
+    motivo = request.form.get("motivo_alteracao", "").strip() or None
+
     if not nome:
         flash("Nome do núcleo é obrigatório.", "error")
         return redirect(url_for('gerenciar_perfis'))
+
+    aldeeiro = get_aldeeiro_por_email(session.get('usuario_email'))
+    cpf_alterou = aldeeiro['cpf'] if aldeeiro else None
+    now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     global NUCLEOS_CACHE
     connection = None
@@ -748,14 +842,30 @@ def cadastrar_nucleo():
             cursorclass=pymysql.cursors.DictCursor
         )
         with connection.cursor() as cursor:
-            cursor.execute("INSERT INTO db_aldeias.tb_nucleo (nome) VALUES (%s)", (nome,))
+            if acao_nucleo == "cadastrar":
+                sql = """
+                    INSERT INTO db_aldeias.tb_nucleo
+                        (nome, endereco, dias_reuniao, ativo, motivo_alteracao, data_criacao, cpf_alterou)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                """
+                cursor.execute(sql, (nome, endereco, dias_reuniao, ativo, motivo, now, cpf_alterou))
+                flash(f"Núcleo '{nome}' cadastrado com sucesso!", "success")
+            else:
+                nucleo_id = request.form.get("nucleo_id")
+                sql = """
+                    UPDATE db_aldeias.tb_nucleo
+                    SET nome = %s, endereco = %s, dias_reuniao = %s, ativo = %s,
+                        motivo_alteracao = %s, data_update = %s, cpf_alterou = %s
+                    WHERE id = %s
+                """
+                cursor.execute(sql, (nome, endereco, dias_reuniao, ativo, motivo, now, cpf_alterou, nucleo_id))
+                flash(f"Núcleo '{nome}' atualizado com sucesso!", "success")
             connection.commit()
-            NUCLEOS_CACHE = None  # Limpar cache para recarregar
-            flash(f"Núcleo '{nome}' cadastrado com sucesso!", "success")
+            NUCLEOS_CACHE = None
     except pymysql.err.IntegrityError:
         flash(f"Já existe um núcleo com o nome '{nome}'.", "error")
     except Exception as e:
-        flash(f"Erro ao cadastrar núcleo: {str(e)}", "error")
+        flash(f"Erro ao salvar núcleo: {str(e)}", "error")
     finally:
         if connection:
             connection.close()

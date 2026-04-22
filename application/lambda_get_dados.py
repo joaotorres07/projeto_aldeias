@@ -3,6 +3,7 @@ import os
 import logging
 import pymysql
 from decimal import Decimal
+from datetime import datetime, date
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -97,7 +98,7 @@ def select_nucleos():
     connection = get_db_connection()
     try:
         with connection.cursor() as cursor:
-            sql = """ SELECT * FROM db_aldeias.tb_nucleo """
+            sql = """ SELECT id, nome FROM db_aldeias.tb_nucleo """
             cursor.execute(sql)
             resultados = cursor.fetchall()
     except Exception as e:
@@ -113,6 +114,8 @@ def select_nucleos():
 def decimal_serializer(obj):
     if isinstance(obj, Decimal):
         return int(obj)
+    if isinstance(obj, (datetime, date)):
+        return obj.isoformat()
     raise TypeError(f"Tipo não serializável: {type(obj)}")
 
 #lambda_handler('', '')

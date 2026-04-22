@@ -73,16 +73,55 @@
     </form>
 </div>
 
-<h5 class="mt-4 mb-3"><i class="bi bi-geo-alt"></i> Cadastrar Núcleo</h5>
+<h5 class="mt-4 mb-3"><i class="bi bi-geo-alt"></i> Cadastrar / Atualizar Núcleo</h5>
 <div class="card p-4">
-    <form method="POST" action="/admin/cadastrar-nucleo">
-        <div class="row g-3 align-items-end">
-            <div class="col-12 col-md-5">
-                <label class="form-label">Nome do Núcleo</label>
-                <input type="text" class="form-control" name="nome_nucleo" required maxlength="50" placeholder="Ex: Belo Horizonte">
+    <div class="row mb-3">
+        <div class="col-12 col-md-4">
+            <label class="form-label">Ação</label>
+            <select class="form-select" id="acao_nucleo_select" onchange="toggleAcaoNucleo()">
+                <option value="cadastrar">Cadastrar Núcleo</option>
+                <option value="atualizar">Atualizar Núcleo</option>
+            </select>
+        </div>
+        <div class="col-12 col-md-4" id="div_select_nucleo" style="display:none;">
+            <label class="form-label">Selecione o Núcleo</label>
+            <select class="form-select" id="select_nucleo_existente" onchange="carregarNucleo()">
+                <option value="">Selecione...</option>
+                {% for n in nucleos %}
+                    <option value="{{ n.id }}">{{ n.nome }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+    <form method="POST" action="/admin/cadastrar-nucleo" id="form_nucleo">
+        <input type="hidden" name="acao_nucleo" id="acao_nucleo_hidden" value="cadastrar">
+        <input type="hidden" name="nucleo_id" id="nucleo_id_hidden" value="">
+        <div class="row g-3">
+            <div class="col-12 col-md-4">
+                <label class="form-label">Nome do Núcleo <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" name="nome_nucleo" id="nome_nucleo" required maxlength="50" placeholder="Ex: Belo Horizonte">
             </div>
-            <div class="col-12 col-md-3 d-flex align-items-end">
-                <button type="submit" class="btn btn-info text-white w-100">
+            <div class="col-12 col-md-5">
+                <label class="form-label">Endereço <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" name="endereco_nucleo" id="endereco_nucleo" required maxlength="200" placeholder="Endereço do local de reunião">
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label">Dia/Horário Reunião <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" name="dias_reuniao" id="dias_reuniao" required maxlength="100" placeholder="Ex: Segunda e Quarta">
+            </div>
+            <div class="col-6 col-md-2">
+                <label class="form-label">Ativo <span class="text-danger">*</span></label>
+                <select class="form-select" name="ativo_nucleo" id="ativo_nucleo" required>
+                    <option value="1" selected>Sim</option>
+                    <option value="0">Não</option>
+                </select>
+            </div>
+            <div class="col-12 col-md-6">
+                <label class="form-label">Motivo da Alteração <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" name="motivo_alteracao" id="motivo_alteracao" required maxlength="200" placeholder="Motivo da alteração">
+            </div>
+            <div class="col-12 col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-info text-white w-100" id="btn_nucleo">
                     <i class="bi bi-plus-circle"></i> Cadastrar
                 </button>
             </div>
@@ -196,5 +235,66 @@ document.getElementById('form_ativar').addEventListener('submit', function() {
     var cpf = document.getElementById('cpf_ativar');
     cpf.value = cpf.value.replace(/\D/g, '');
 });
+
+function toggleAcaoNucleo() {
+    const acao = document.getElementById('acao_nucleo_select').value;
+    const divSelect = document.getElementById('div_select_nucleo');
+    const btn = document.getElementById('btn_nucleo');
+    const hidden = document.getElementById('acao_nucleo_hidden');
+    const motivo = document.getElementById('motivo_alteracao');
+
+    hidden.value = acao;
+
+    if (acao === 'atualizar') {
+        divSelect.style.display = '';
+        btn.innerHTML = '<i class="bi bi-pencil-square"></i> Atualizar';
+        btn.classList.remove('btn-info');
+        btn.classList.add('btn-warning');
+        motivo.required = true;
+        document.getElementById('select_nucleo_existente').value = '';
+        limparCamposNucleo();
+    } else {
+        divSelect.style.display = 'none';
+        btn.innerHTML = '<i class="bi bi-plus-circle"></i> Cadastrar';
+        btn.classList.remove('btn-warning');
+        btn.classList.add('btn-info');
+        motivo.required = false;
+        document.getElementById('select_nucleo_existente').value = '';
+        limparCamposNucleo();
+    }
+}
+
+function limparCamposNucleo() {
+    document.getElementById('nome_nucleo').value = '';
+    document.getElementById('endereco_nucleo').value = '';
+    document.getElementById('dias_reuniao').value = '';
+    document.getElementById('ativo_nucleo').value = '1';
+    document.getElementById('motivo_alteracao').value = '';
+    document.getElementById('nucleo_id_hidden').value = '';
+}
+
+function carregarNucleo() {
+    const nucleoId = document.getElementById('select_nucleo_existente').value;
+    if (!nucleoId) {
+        limparCamposNucleo();
+        return;
+    }
+
+    fetch('/admin/buscar-nucleo?id=' + encodeURIComponent(nucleoId))
+        .then(r => r.json())
+        .then(data => {
+            if (data.id) {
+                document.getElementById('nucleo_id_hidden').value = data.id;
+                document.getElementById('nome_nucleo').value = data.nome || '';
+                document.getElementById('endereco_nucleo').value = data.endereco || '';
+                document.getElementById('dias_reuniao').value = data.dias_reuniao || '';
+                document.getElementById('ativo_nucleo').value = data.ativo ? '1' : '0';
+                document.getElementById('motivo_alteracao').value = '';
+            }
+        })
+        .catch(() => {
+            limparCamposNucleo();
+        });
+}
 </script>
 {% endblock %}

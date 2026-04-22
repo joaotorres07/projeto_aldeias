@@ -4,6 +4,13 @@ use db_aldeias;
 CREATE TABLE `tb_nucleo` (
   `id` int NOT NULL AUTO_INCREMENT,
   `nome` varchar(50) NOT NULL,
+  `endereco` varchar(200) NOT NULL,
+  `dias_reuniao` varchar(100) NOT NULL,
+  `ativo` tinyint(1) NOT NULL DEFAULT '1',
+  `motivo_alteracao` varchar(200) NOT NULL,
+  `data_criacao` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `data_update` timestamp NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  `cpf_alterou` varchar(20) DEFAULT NULL,
   PRIMARY KEY (`id`)
 );
 
@@ -167,3 +174,14 @@ ALTER TABLE `tb_formacao`
 ADD COLUMN `cpf_formador` VARCHAR(20) NULL AFTER `nucleo`,
 ADD KEY `fk_formacao_formador` (`cpf_formador`),
 ADD CONSTRAINT `fk_formacao_formador` FOREIGN KEY (`cpf_formador`) REFERENCES `tb_aldeeiro` (`cpf`);
+
+ALTER TABLE `tb_nucleo`
+ADD COLUMN `endereco` VARCHAR(200) NULL AFTER `nome`,
+ADD COLUMN `dias_reuniao` VARCHAR(100) NULL AFTER `endereco`,
+ADD COLUMN `ativo` TINYINT(1) NOT NULL DEFAULT 1 AFTER `dias_reuniao`,
+ADD COLUMN `motivo_alteracao` VARCHAR(200) NULL AFTER `ativo`,
+ADD COLUMN `data_criacao` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER `motivo_alteracao`,
+ADD COLUMN `data_update` TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP AFTER `data_criacao`,
+ADD COLUMN `cpf_alterou` VARCHAR(20) NULL AFTER `data_update`,
+ADD KEY `fk_nucleo_cpf_alterou` (`cpf_alterou`),
+ADD CONSTRAINT `fk_nucleo_cpf_alterou` FOREIGN KEY (`cpf_alterou`) REFERENCES `tb_aldeeiro` (`cpf`);

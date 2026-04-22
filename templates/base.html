@@ -55,6 +55,7 @@
                 <a class="nav-link text-light py-3 px-4" href="/aldeeiro/form"><i class="bi bi-person-fill-gear me-2"></i> Meu Cadastro</a>
                 <a class="nav-link text-light py-3 px-4" href="/formacao/presenca"><i class="bi bi-check2-square me-2"></i> Registrar Presença</a>
                 <a class="nav-link text-light py-3 px-4" href="/arquivos"><i class="bi bi-folder2-open me-2"></i> Arquivos e Informativos</a>
+                <a class="nav-link text-light py-3 px-4" href="/informacoes"><i class="bi bi-info-circle me-2"></i> Informações Gerais</a>
                 {% set perfil = session.get('perfil', []) %}
                 {% if 'Formador' in perfil %}
                 <a class="nav-link text-light py-3 px-4" href="/formacao/abrir"><i class="bi bi-journal-plus me-2"></i> Abrir Formação</a>
@@ -79,6 +80,7 @@
                 <a class="nav-link" href="/aldeeiro/form"><i class="bi bi-person-fill-gear"></i> Meu Cadastro</a>
                 <a class="nav-link" href="/formacao/presenca"><i class="bi bi-check2-square"></i> Registrar Presença</a>
                 <a class="nav-link" href="/arquivos"><i class="bi bi-folder2-open"></i> Arquivos e Informativos</a>
+                <a class="nav-link" href="/informacoes"><i class="bi bi-info-circle"></i> Informações Gerais</a>
                 {% set perfil = session.get('perfil', []) %}
                 {% if 'Formador' in perfil %}
                 <a class="nav-link" href="/formacao/abrir"><i class="bi bi-journal-plus"></i> Abrir Formação</a>
