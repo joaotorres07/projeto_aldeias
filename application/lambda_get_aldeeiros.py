@@ -70,7 +70,7 @@ def select_aldeeiros_by(filtros):
                         LEFT JOIN db_aldeias.tb_equipes e ON e.id = ae.id_equipe
                         LEFT JOIN db_aldeias.tb_aldeia ad ON ad.id = aaf.id_aldeia
                         LEFT JOIN db_aldeias.tb_aldeia ad2 ON ad2.id = aas.id_aldeia
-                WHERE 1=1 
+                WHERE a.ativo = 1
                   """
             params = []
             if filtros:

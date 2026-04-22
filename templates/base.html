@@ -56,9 +56,11 @@
                 <a class="nav-link text-light py-3 px-4" href="/formacao/presenca"><i class="bi bi-check2-square me-2"></i> Registrar Presença</a>
                 <a class="nav-link text-light py-3 px-4" href="/arquivos"><i class="bi bi-folder2-open me-2"></i> Arquivos e Informativos</a>
                 {% set perfil = session.get('perfil', []) %}
-                {% if 'Formador' in perfil or 'Coordenador' in perfil %}
-                <a class="nav-link text-light py-3 px-4" href="/aldeeiro/listar"><i class="bi bi-people me-2"></i> Consultar Aldeeiro(s)</a>
+                {% if 'Formador' in perfil %}
                 <a class="nav-link text-light py-3 px-4" href="/formacao/abrir"><i class="bi bi-journal-plus me-2"></i> Abrir Formação</a>
+                {% endif %}
+                {% if 'Coordenador' in perfil %}
+                <a class="nav-link text-light py-3 px-4" href="/aldeeiro/listar"><i class="bi bi-people me-2"></i> Consultar Aldeeiro(s)</a>
                 <a class="nav-link text-light py-3 px-4" href="/formacao/consultar"><i class="bi bi-journal-text me-2"></i> Consultar Formações</a>
                 <a class="nav-link text-muted py-3 px-4 disabled" href="#" style="pointer-events: none;"><i class="bi bi-whatsapp me-2"></i> Enviar WhatsApp <small>(em breve)</small></a>
                 <a class="nav-link text-light py-3 px-4" href="/relatorio/presenca"><i class="bi bi-clipboard-data me-2"></i> Relatório de Presença</a>
@@ -78,9 +80,11 @@
                 <a class="nav-link" href="/formacao/presenca"><i class="bi bi-check2-square"></i> Registrar Presença</a>
                 <a class="nav-link" href="/arquivos"><i class="bi bi-folder2-open"></i> Arquivos e Informativos</a>
                 {% set perfil = session.get('perfil', []) %}
-                {% if 'Formador' in perfil or 'Coordenador' in perfil %}
-                <a class="nav-link" href="/aldeeiro/listar"><i class="bi bi-people"></i> Consultar Aldeeiro(s)</a>
+                {% if 'Formador' in perfil %}
                 <a class="nav-link" href="/formacao/abrir"><i class="bi bi-journal-plus"></i> Abrir Formação</a>
+                {% endif %}
+                {% if 'Coordenador' in perfil %}
+                <a class="nav-link" href="/aldeeiro/listar"><i class="bi bi-people"></i> Consultar Aldeeiro(s)</a>
                 <a class="nav-link" href="/formacao/consultar"><i class="bi bi-journal-text"></i> Consultar Formações</a>
                 <a class="nav-link disabled text-muted" href="#" style="pointer-events: none;"><i class="bi bi-whatsapp"></i> Enviar WhatsApp <small>(em breve)</small></a>
                 <a class="nav-link" href="/relatorio/presenca"><i class="bi bi-clipboard-data"></i> Relatório de Presença</a>

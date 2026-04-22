@@ -227,7 +227,7 @@ def salvar_atualizar_aldeeiro():
 
 @application.route("/aldeeiro/listar", methods=["GET", "POST"])
 @login_required
-@perfil_required('Formador', 'Coordenador')
+@perfil_required('Coordenador')
 def listar_aldeeiros():
     nucleos = get_nucleos()
     response = lambda_handler({}, None)
@@ -242,7 +242,7 @@ def listar_aldeeiros():
 
 @application.route("/pesquisarAldeeiros", methods=["GET", "POST"])
 @login_required
-@perfil_required('Formador', 'Coordenador')
+@perfil_required('Coordenador')
 def pesquisar_aldeeeiros():
     nome = request.args.get("nome") or request.form.get("nome")
     nucleo = request.args.get("nucleo") or request.form.get("nucleo")
@@ -297,7 +297,7 @@ def pesquisar_aldeeeiros():
 
 @application.route("/formacao/abrir", methods=["GET", "POST"])
 @login_required
-@perfil_required('Formador', 'Coordenador')
+@perfil_required('Formador')
 def abrir_formacao():
     if request.method == "POST":
         aldeeiro = get_aldeeiro_por_email(session.get('usuario_email'))
@@ -414,7 +414,7 @@ def download_arquivo():
 
 @application.route("/whatsapp/enviar", methods=["GET", "POST"])
 @login_required
-@perfil_required('Formador', 'Coordenador')
+@perfil_required('Coordenador')
 def enviar_whatsapp():
     if request.method == "POST":
         tipo_envio = request.form.get("tipo_envio")
@@ -445,7 +445,7 @@ def enviar_whatsapp():
 
 @application.route("/formacao/consultar", methods=["GET", "POST"])
 @login_required
-@perfil_required('Formador', 'Coordenador')
+@perfil_required('Coordenador')
 def consultar_formacoes():
     nucleos = get_nucleos()
     resultados = None
@@ -513,7 +513,7 @@ def consultar_formacoes():
 
 @application.route("/relatorio/presenca", methods=["GET", "POST"])
 @login_required
-@perfil_required('Formador', 'Coordenador')
+@perfil_required('Coordenador')
 def relatorio_presenca():
     nucleos = get_nucleos()
     resultados = None
@@ -541,7 +541,7 @@ def relatorio_presenca():
                     JOIN db_aldeias.tb_nucleo n ON n.id = a.nucleo
                     LEFT JOIN db_aldeias.tb_frequencia_aldeeiro fa ON fa.cpf_aldeeiro = a.cpf AND fa.presente = 1
                     LEFT JOIN db_aldeias.tb_formacao f ON f.id = fa.id_formacao
-                    WHERE a.nucleo = %s
+                    WHERE a.nucleo = %s and a.ativo = 1 
                 """
                 params = [nucleo]
 
@@ -668,6 +668,99 @@ def buscar_aldeeiro_por_cpf():
     finally:
         if connection:
             connection.close()
+
+
+@application.route("/admin/buscar-aldeeiro-status", methods=["GET"])
+@login_required
+@perfil_required('Administrador')
+def buscar_aldeeiro_status():
+    cpf = request.args.get("cpf", "")
+    connection = None
+    try:
+        connection = pymysql.connect(
+            host=os.environ['DB_HOST'],
+            user=os.environ['DB_USER'],
+            password=os.environ['DB_PASSWORD'],
+            database=os.environ['DB_NAME'],
+            cursorclass=pymysql.cursors.DictCursor
+        )
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT nome, ativo FROM db_aldeias.tb_aldeeiro WHERE cpf = %s", (cpf,))
+            row = cursor.fetchone()
+            if row:
+                return json.dumps({"nome": row['nome'], "ativo": bool(row['ativo'])}), 200, {"Content-Type": "application/json"}
+            else:
+                return json.dumps({"nome": ""}), 404, {"Content-Type": "application/json"}
+    except Exception:
+        return json.dumps({"nome": ""}), 500, {"Content-Type": "application/json"}
+    finally:
+        if connection:
+            connection.close()
+
+
+@application.route("/admin/ativar-desativar", methods=["POST"])
+@login_required
+@perfil_required('Administrador')
+def ativar_desativar_aldeeiro():
+    cpf = request.form.get("cpf_aldeeiro")
+    acao = request.form.get("acao")
+    novo_status = 1 if acao == "ativar" else 0
+
+    connection = None
+    try:
+        connection = pymysql.connect(
+            host=os.environ['DB_HOST'],
+            user=os.environ['DB_USER'],
+            password=os.environ['DB_PASSWORD'],
+            database=os.environ['DB_NAME'],
+            cursorclass=pymysql.cursors.DictCursor
+        )
+        with connection.cursor() as cursor:
+            cursor.execute("UPDATE db_aldeias.tb_aldeeiro SET ativo = %s WHERE cpf = %s", (novo_status, cpf))
+            connection.commit()
+            flash(f"Aldeeiro {'ativado' if novo_status == 1 else 'desativado'} com sucesso!", "success")
+    except Exception as e:
+        flash(f"Erro ao alterar status: {str(e)}", "error")
+    finally:
+        if connection:
+            connection.close()
+
+    return redirect(url_for('gerenciar_perfis'))
+
+
+@application.route("/admin/cadastrar-nucleo", methods=["POST"])
+@login_required
+@perfil_required('Administrador')
+def cadastrar_nucleo():
+    nome = request.form.get("nome_nucleo", "").strip()
+    if not nome:
+        flash("Nome do núcleo é obrigatório.", "error")
+        return redirect(url_for('gerenciar_perfis'))
+
+    global NUCLEOS_CACHE
+    connection = None
+    try:
+        connection = pymysql.connect(
+            host=os.environ['DB_HOST'],
+            user=os.environ['DB_USER'],
+            password=os.environ['DB_PASSWORD'],
+            database=os.environ['DB_NAME'],
+            cursorclass=pymysql.cursors.DictCursor
+        )
+        with connection.cursor() as cursor:
+            cursor.execute("INSERT INTO db_aldeias.tb_nucleo (nome) VALUES (%s)", (nome,))
+            connection.commit()
+            NUCLEOS_CACHE = None  # Limpar cache para recarregar
+            flash(f"Núcleo '{nome}' cadastrado com sucesso!", "success")
+    except pymysql.err.IntegrityError:
+        flash(f"Já existe um núcleo com o nome '{nome}'.", "error")
+    except Exception as e:
+        flash(f"Erro ao cadastrar núcleo: {str(e)}", "error")
+    finally:
+        if connection:
+            connection.close()
+
+    return redirect(url_for('gerenciar_perfis'))
 
 
 # ==================== HELPERS ====================

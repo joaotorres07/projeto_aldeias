@@ -39,6 +39,56 @@
         </div>
     </form>
 </div>
+
+<h5 class="mt-4 mb-3"><i class="bi bi-person-check"></i> Ativar / Desativar Aldeeiro</h5>
+<div class="card p-4">
+    <form method="POST" action="/admin/ativar-desativar" id="form_ativar">
+        <div class="row g-3">
+            <div class="col-12 col-md-3">
+                <label class="form-label">CPF do Aldeeiro</label>
+                <input type="text" class="form-control" id="cpf_ativar" name="cpf_aldeeiro" required
+                       maxlength="14" placeholder="000.000.000-00" oninput="mascaraCPF(this); buscarAldeeiro2()">
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label">Nome do Aldeeiro</label>
+                <input type="text" class="form-control" id="nome_ativar" disabled placeholder="Digite o CPF...">
+            </div>
+            <div class="col-12 col-md-2">
+                <label class="form-label">Status Atual</label>
+                <input type="text" class="form-control" id="status_atual" disabled placeholder="-">
+            </div>
+            <div class="col-6 col-md-2">
+                <label class="form-label">Ação</label>
+                <select name="acao" class="form-select" id="select_acao_ativar" required>
+                    <option value="ativar">Ativar</option>
+                    <option value="desativar">Desativar</option>
+                </select>
+            </div>
+            <div class="col-6 col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-warning w-100" id="btn_ativar" disabled>
+                    <i class="bi bi-toggle-on"></i> Executar
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<h5 class="mt-4 mb-3"><i class="bi bi-geo-alt"></i> Cadastrar Núcleo</h5>
+<div class="card p-4">
+    <form method="POST" action="/admin/cadastrar-nucleo">
+        <div class="row g-3 align-items-end">
+            <div class="col-12 col-md-5">
+                <label class="form-label">Nome do Núcleo</label>
+                <input type="text" class="form-control" name="nome_nucleo" required maxlength="50" placeholder="Ex: Belo Horizonte">
+            </div>
+            <div class="col-12 col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-info text-white w-100">
+                    <i class="bi bi-plus-circle"></i> Cadastrar
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -92,6 +142,58 @@ function buscarAldeeiro() {
 
 document.querySelector('form').addEventListener('submit', function() {
     var cpf = document.getElementById('cpf_aldeeiro');
+    cpf.value = cpf.value.replace(/\D/g, '');
+});
+
+let timeout2 = null;
+function buscarAldeeiro2() {
+    clearTimeout(timeout2);
+    const cpfDigits = document.getElementById('cpf_ativar').value.replace(/\D/g, '');
+    const nomeField = document.getElementById('nome_ativar');
+    const statusField = document.getElementById('status_atual');
+    const btn = document.getElementById('btn_ativar');
+
+    if (cpfDigits.length < 11) {
+        nomeField.value = '';
+        statusField.value = '-';
+        nomeField.classList.remove('is-valid', 'is-invalid');
+        btn.disabled = true;
+        return;
+    }
+
+    timeout2 = setTimeout(() => {
+        fetch('/admin/buscar-aldeeiro-status?cpf=' + encodeURIComponent(cpfDigits))
+            .then(r => r.json().then(data => ({status: r.status, data})))
+            .then(({status, data}) => {
+                if (status === 200 && data.nome) {
+                    nomeField.value = data.nome;
+                    nomeField.classList.remove('is-invalid');
+                    nomeField.classList.add('is-valid');
+                    statusField.value = data.ativo ? 'Ativo' : 'Inativo';
+                    statusField.className = 'form-control ' + (data.ativo ? 'text-success' : 'text-danger');
+                    document.getElementById('select_acao_ativar').value = data.ativo ? 'desativar' : 'ativar';
+                    btn.disabled = false;
+                } else {
+                    nomeField.value = 'Aldeeiro não encontrado';
+                    nomeField.classList.remove('is-valid');
+                    nomeField.classList.add('is-invalid');
+                    statusField.value = '-';
+                    statusField.className = 'form-control';
+                    btn.disabled = true;
+                }
+            })
+            .catch(() => {
+                nomeField.value = 'Erro ao buscar';
+                nomeField.classList.remove('is-valid');
+                nomeField.classList.add('is-invalid');
+                statusField.value = '-';
+                btn.disabled = true;
+            });
+    }, 400);
+}
+
+document.getElementById('form_ativar').addEventListener('submit', function() {
+    var cpf = document.getElementById('cpf_ativar');
     cpf.value = cpf.value.replace(/\D/g, '');
 });
 </script>
