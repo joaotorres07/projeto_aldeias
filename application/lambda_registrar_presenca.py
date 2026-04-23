@@ -54,7 +54,6 @@ def registrar_presenca(body):
     connection = get_db_connection()
     try:
         with connection.cursor() as cursor:
-            # Verifica se já registrou presença nesta formação
             cursor.execute(
                 "SELECT id FROM db_aldeias.tb_frequencia_aldeeiro WHERE cpf_aldeeiro = %s AND id_formacao = %s",
                 (body['cpf'], body['id_formacao'])
@@ -62,11 +61,10 @@ def registrar_presenca(body):
             if cursor.fetchone():
                 raise Exception("Você já registrou presença nesta formação.")
 
-            sql = " INSERT INTO db_aldeias.tb_frequencia_aldeeiro (cpf_aldeeiro, id_formacao, presente, data_registro) VALUES (%s, %s, %s, %s) "
+            sql = " INSERT INTO db_aldeias.tb_frequencia_aldeeiro (cpf_aldeeiro, id_formacao, data_registro) VALUES (%s, %s, %s) "
             values = (
                 body['cpf'],
                 body['id_formacao'],
-                1,
                 datetime.datetime.now().strftime('%Y-%m-%d'),
             )
             cursor.execute(sql, values)

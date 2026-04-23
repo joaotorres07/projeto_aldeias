@@ -6,6 +6,15 @@
 <div class="row g-4">
     <div class="col-sm-6 col-md-4">
         <div class="card p-4 text-center h-100">
+            <i class="bi bi-info-circle" style="font-size: 2.5rem; color: #17a2b8;"></i>
+            <h5 class="mt-3">Informações Gerais</h5>
+            <p class="text-muted">Redes sociais, playlists, doação e contatos dos núcleos.</p>
+            <a href="{{ url_for('informacoes_gerais') }}" class="btn btn-outline-info">Acessar</a>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-md-4">
+        <div class="card p-4 text-center h-100">
             <i class="bi bi-person-fill-gear" style="font-size: 2.5rem; color: #5a67d8;"></i>
             <h5 class="mt-3">Concluir ou Atualizar meu Cadastro</h5>
             <p class="text-muted">Preencha ou atualize seus dados de aldeeiro.</p>
@@ -22,24 +31,6 @@
         </div>
     </div>
 
-    <div class="col-sm-6 col-md-4">
-        <div class="card p-4 text-center h-100">
-            <i class="bi bi-folder2-open" style="font-size: 2.5rem; color: #e67e22;"></i>
-            <h5 class="mt-3">Arquivos e Informativos</h5>
-            <p class="text-muted">Baixe arquivos e informativos das equipes.</p>
-            <a href="{{ url_for('arquivos_informativos') }}" class="btn btn-outline-warning text-dark">Acessar</a>
-        </div>
-    </div>
-
-    <div class="col-sm-6 col-md-4">
-        <div class="card p-4 text-center h-100">
-            <i class="bi bi-info-circle" style="font-size: 2.5rem; color: #17a2b8;"></i>
-            <h5 class="mt-3">Informações Gerais</h5>
-            <p class="text-muted">Redes sociais, playlists, doação e contatos dos núcleos.</p>
-            <a href="{{ url_for('informacoes_gerais') }}" class="btn btn-outline-info">Acessar</a>
-        </div>
-    </div>
-
     {% if 'Formador' in perfil %}
     <div class="col-sm-6 col-md-4">
         <div class="card p-4 text-center h-100">
@@ -51,6 +42,15 @@
     </div>
     {% endif %}
 
+    <div class="col-sm-6 col-md-4">
+        <div class="card p-4 text-center h-100">
+            <i class="bi bi-folder2-open" style="font-size: 2.5rem; color: #e67e22;"></i>
+            <h5 class="mt-3">Arquivos e Informativos</h5>
+            <p class="text-muted">Baixe arquivos e informativos das equipes.</p>
+            <a href="{{ url_for('arquivos_informativos') }}" class="btn btn-outline-warning text-dark">Acessar</a>
+        </div>
+    </div>
+
     {% if 'Coordenador' in perfil %}
     <div class="col-sm-6 col-md-4">
         <div class="card p-4 text-center h-100">
@@ -58,6 +58,15 @@
             <h5 class="mt-3">Consultar Aldeeiro(s)</h5>
             <p class="text-muted">Pesquise e visualize aldeeiros cadastrados.</p>
             <a href="{{ url_for('listar_aldeeiros') }}" class="btn btn-info text-white">Acessar</a>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-md-4">
+        <div class="card p-4 text-center h-100">
+            <i class="bi bi-clipboard-data" style="font-size: 2.5rem; color: #805ad5;"></i>
+            <h5 class="mt-3">Relatório de Presença</h5>
+            <p class="text-muted">Consulte a frequência dos aldeeiros nas formações.</p>
+            <a href="{{ url_for('relatorio_presenca') }}" class="btn btn-purple btn-outline-secondary">Acessar</a>
         </div>
     </div>
 
@@ -76,15 +85,6 @@
             <h5 class="mt-3">Enviar WhatsApp</h5>
             <p class="text-muted">Envie mensagens via WhatsApp.</p>
             <button class="btn btn-success" disabled title="Função será implementada em breve">Acessar</button>
-        </div>
-    </div>
-
-    <div class="col-sm-6 col-md-4">
-        <div class="card p-4 text-center h-100">
-            <i class="bi bi-clipboard-data" style="font-size: 2.5rem; color: #805ad5;"></i>
-            <h5 class="mt-3">Relatório de Presença</h5>
-            <p class="text-muted">Consulte a frequência dos aldeeiros nas formações.</p>
-            <a href="{{ url_for('relatorio_presenca') }}" class="btn btn-purple btn-outline-secondary">Acessar</a>
         </div>
     </div>
     {% endif %}

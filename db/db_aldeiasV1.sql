@@ -104,7 +104,6 @@ CREATE TABLE `tb_frequencia_aldeeiro` (
   `id` int NOT NULL AUTO_INCREMENT,
   `id_formacao` int NOT NULL,
   `cpf_aldeeiro` varchar(20) NOT NULL,
-  `presente` tinyint(1) NOT NULL DEFAULT '0',
   `data_registro` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_freq_formacao_aldeeiro` (`id_formacao`,`cpf_aldeeiro`),

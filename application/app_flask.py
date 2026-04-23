@@ -609,7 +609,7 @@ def relatorio_presenca():
                            MAX(f.data_formacao) AS ultima_presenca
                     FROM db_aldeias.tb_aldeeiro a
                     JOIN db_aldeias.tb_nucleo n ON n.id = a.nucleo
-                    LEFT JOIN db_aldeias.tb_frequencia_aldeeiro fa ON fa.cpf_aldeeiro = a.cpf AND fa.presente = 1
+                    LEFT JOIN db_aldeias.tb_frequencia_aldeeiro fa ON fa.cpf_aldeeiro = a.cpf
                     LEFT JOIN db_aldeias.tb_formacao f ON f.id = fa.id_formacao
                     WHERE a.nucleo = %s and a.ativo = 1 
                 """
