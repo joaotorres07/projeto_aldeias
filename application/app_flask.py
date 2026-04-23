@@ -570,6 +570,7 @@ def consultar_formacoes():
 def relatorio_presenca():
     nucleos = get_nucleos()
     resultados = None
+    total_formacoes_nucleo = 0
 
     if request.method == "POST":
         nucleo = request.form.get("nucleo")
@@ -586,6 +587,22 @@ def relatorio_presenca():
                 cursorclass=pymysql.cursors.DictCursor
             )
             with connection.cursor() as cursor:
+                # Contar formações do núcleo no período
+                sql_count = """
+                    SELECT COUNT(*) AS total
+                    FROM db_aldeias.tb_formacao
+                    WHERE nucleo = %s
+                """
+                params_count = [nucleo]
+                if data_inicio:
+                    sql_count += " AND data_formacao >= %s"
+                    params_count.append(data_inicio)
+                if data_fim:
+                    sql_count += " AND data_formacao <= %s"
+                    params_count.append(data_fim)
+                cursor.execute(sql_count, params_count)
+                total_formacoes_nucleo = cursor.fetchone()['total']
+
                 sql = """
                     SELECT a.nome, n.nome AS nucleo,
                            COUNT(DISTINCT fa.id) AS total_formacoes,
@@ -628,7 +645,8 @@ def relatorio_presenca():
         "relatorio_presenca.html",
         nucleos=nucleos,
         resultados=resultados,
-        filtros=filtros
+        filtros=filtros,
+        total_formacoes_nucleo=total_formacoes_nucleo
     )
 
 
