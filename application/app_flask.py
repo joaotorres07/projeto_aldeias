@@ -520,7 +520,7 @@ def consultar_formacoes():
             )
             with connection.cursor() as cursor:
                 sql = """
-                    SELECT f.data_formacao, f.tema, n.nome AS nucleo,
+                    SELECT f.id, f.data_formacao, f.tema, n.nome AS nucleo,
                            COALESCE(a.nome, 'Não informado') AS formador
                     FROM db_aldeias.tb_formacao f
                     JOIN db_aldeias.tb_nucleo n ON n.id = f.nucleo
@@ -565,6 +565,49 @@ def consultar_formacoes():
 
 # ==================== RELATÓRIOS ====================
 
+@application.route("/formacao/<int:id_formacao>/presentes", methods=["GET"])
+@login_required
+@perfil_required('Coordenador')
+def lista_presentes_formacao(id_formacao):
+    connection = None
+    formacao = None
+    presentes = []
+    try:
+        connection = pymysql.connect(
+            host=os.environ['DB_HOST'],
+            user=os.environ['DB_USER'],
+            password=os.environ['DB_PASSWORD'],
+            database=os.environ['DB_NAME'],
+            cursorclass=pymysql.cursors.DictCursor
+        )
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "SELECT f.tema, f.data_formacao FROM db_aldeias.tb_formacao f WHERE f.id = %s",
+                (id_formacao,)
+            )
+            formacao = cursor.fetchone()
+
+            cursor.execute("""
+                SELECT a.nome
+                FROM db_aldeias.tb_frequencia_aldeeiro fa
+                JOIN db_aldeias.tb_aldeeiro a ON a.cpf = fa.cpf_aldeeiro
+                WHERE fa.id_formacao = %s
+                ORDER BY a.nome
+            """, (id_formacao,))
+            presentes = cursor.fetchall()
+    except Exception as e:
+        flash(f"Erro ao consultar presentes: {str(e)}", "error")
+    finally:
+        if connection:
+            connection.close()
+
+    return render_template(
+        "lista_presentes.html",
+        formacao=formacao,
+        presentes=presentes
+    )
+
+
 @application.route("/relatorio/presenca", methods=["GET", "POST"])
 @login_required
 @perfil_required('Coordenador')
@@ -588,7 +631,6 @@ def relatorio_presenca():
                 cursorclass=pymysql.cursors.DictCursor
             )
             with connection.cursor() as cursor:
-                # Contar formações do núcleo no período
                 sql_count = """
                     SELECT COUNT(*) AS total
                     FROM db_aldeias.tb_formacao
@@ -604,26 +646,39 @@ def relatorio_presenca():
                 cursor.execute(sql_count, params_count)
                 total_formacoes_nucleo = cursor.fetchone()['total']
 
-                sql = """
+                join_extra = ""
+                join_params = []
+                if data_inicio:
+                    join_extra += " AND f.data_formacao >= %s"
+                    join_params.append(data_inicio)
+                if data_fim:
+                    join_extra += " AND f.data_formacao <= %s"
+                    join_params.append(data_fim)
+
+                sql = f"""
                     SELECT a.nome, n.nome AS nucleo,
                            COUNT(DISTINCT fa.id) AS total_formacoes,
                            MAX(f.data_formacao) AS ultima_presenca
                     FROM db_aldeias.tb_aldeeiro a
                     JOIN db_aldeias.tb_nucleo n ON n.id = a.nucleo
                     LEFT JOIN db_aldeias.tb_frequencia_aldeeiro fa ON fa.cpf_aldeeiro = a.cpf
-                    LEFT JOIN db_aldeias.tb_formacao f ON f.id = fa.id_formacao
-                    WHERE a.nucleo = %s and a.ativo = 1 
+                    LEFT JOIN db_aldeias.tb_formacao f ON f.id = fa.id_formacao{join_extra}
+                    WHERE a.nucleo = %s AND a.ativo = 1
                 """
-                params = [nucleo]
+                params = join_params + [nucleo]
 
-                if data_inicio:
-                    sql += " AND f.data_formacao >= %s"
-                    params.append(data_inicio)
-                if data_fim:
-                    sql += " AND f.data_formacao <= %s"
-                    params.append(data_fim)
+                sql += " GROUP BY a.cpf, a.nome, n.nome"
 
-                sql += " GROUP BY a.cpf, a.nome, n.nome ORDER BY total_formacoes DESC, a.nome"
+                zero_presenca = request.form.get("zero_presenca")
+                min_presenca = request.form.get("min_presenca")
+
+                if zero_presenca:
+                    sql += " HAVING total_formacoes = 0"
+                elif min_presenca:
+                    sql += " HAVING total_formacoes >= %s"
+                    params.append(int(min_presenca))
+
+                sql += " ORDER BY total_formacoes DESC, a.nome"
 
                 cursor.execute(sql, params)
                 resultados = cursor.fetchall()
@@ -639,7 +694,9 @@ def relatorio_presenca():
         filtros = {
             'nucleo': request.form.get('nucleo', ''),
             'data_inicio': request.form.get('data_inicio', ''),
-            'data_fim': request.form.get('data_fim', '')
+            'data_fim': request.form.get('data_fim', ''),
+            'zero_presenca': request.form.get('zero_presenca', ''),
+            'min_presenca': request.form.get('min_presenca', '')
         }
 
     return render_template(

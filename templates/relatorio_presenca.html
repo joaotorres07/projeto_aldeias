@@ -29,6 +29,24 @@
                 <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search"></i> Consultar</button>
             </div>
         </div>
+        <div class="row g-3 align-items-end mt-1">
+            <div class="col-6 col-md-3">
+                <div class="form-check mt-2">
+                    <input class="form-check-input" type="checkbox" id="zero_presenca" name="zero_presenca" value="1"
+                           {{ 'checked' if filtros.get('zero_presenca') }} onchange="toggleMinPresenca()">
+                    <label class="form-check-label" for="zero_presenca">Somente com 0 presenças</label>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <label for="min_presenca" class="form-label">Mínimo de presenças</label>
+                <input type="number" class="form-control" id="min_presenca" name="min_presenca" min="0"
+                       value="{{ filtros.get('min_presenca', '') }}" placeholder="Ex: 3"
+                       {{ 'disabled' if filtros.get('zero_presenca') }}>
+            </div>
+            <div class="col-6 col-md-3 offset-md-3">
+                <a href="/relatorio/presenca" class="btn btn-outline-secondary w-100"><i class="bi bi-x-circle"></i> Limpar Filtros</a>
+            </div>
+        </div>
     </form>
 </div>
 
@@ -79,4 +97,15 @@
     <div class="alert alert-warning"><i class="bi bi-exclamation-triangle"></i> Nenhum aldeeiro encontrado para os filtros selecionados.</div>
     {% endif %}
 {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleMinPresenca() {
+    const check = document.getElementById('zero_presenca');
+    const min = document.getElementById('min_presenca');
+    min.disabled = check.checked;
+    if (check.checked) min.value = '';
+}
+</script>
 {% endblock %}

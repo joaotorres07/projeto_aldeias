@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Lista de Presença - Aldeias{% endblock %}
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-people"></i> Lista de Presença no dia {{ formacao.data_formacao.strftime('%d/%m/%Y') if formacao and formacao.data_formacao else '' }}</h2>
+
+{% if formacao %}
+<p class="text-muted mb-3"><strong>Tema:</strong> {{ formacao.tema }}</p>
+{% endif %}
+
+{% if presentes|length > 0 %}
+<div class="card p-4 mb-4">
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>Nome</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in presentes %}
+                <tr>
+                    <td>{{ p.nome }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <p class="text-muted">Total: {{ presentes|length }} aldeeiro(s) presente(s)</p>
+</div>
+{% else %}
+<div class="alert alert-warning"><i class="bi bi-exclamation-triangle"></i> Nenhum aldeeiro registrou presença nesta formação.</div>
+{% endif %}
+
+<a href="/formacao/consultar" class="btn btn-secondary"><i class="bi bi-arrow-left"></i> Voltar</a>
+{% endblock %}
+

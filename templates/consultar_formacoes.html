@@ -29,6 +29,11 @@
                 <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search"></i> Consultar</button>
             </div>
         </div>
+        <div class="row g-3 mt-1">
+            <div class="col-12 col-md-3 offset-md-9">
+                <a href="/formacao/consultar" class="btn btn-outline-secondary w-100"><i class="bi bi-x-circle"></i> Limpar Filtros</a>
+            </div>
+        </div>
     </form>
 </div>
 
@@ -43,6 +48,7 @@
                         <th>Tema</th>
                         <th>Núcleo</th>
                         <th>Formador</th>
+                        <th class="text-center">Presentes</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -52,6 +58,11 @@
                         <td>{{ f.tema }}</td>
                         <td>{{ f.nucleo }}</td>
                         <td>{{ f.formador }}</td>
+                        <td class="text-center">
+                            <a href="/formacao/{{ f.id }}/presentes" class="btn btn-sm btn-outline-primary" title="Ver presentes">
+                                <i class="bi bi-people"></i>
+                            </a>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
