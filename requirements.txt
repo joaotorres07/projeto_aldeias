@@ -1,0 +1,8 @@
+Flask
+PyMySQL
+DBUtils
+boto3
+requests
+Werkzeug
+Jinja2
+

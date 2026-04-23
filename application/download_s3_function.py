@@ -6,20 +6,11 @@ from botocore.exceptions import ClientError
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
-formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-log_format = logging.StreamHandler()
-log_format.setFormatter(formatter)
-logger.addHandler(log_format)
 
 
-def lambda_handler(event, context):
+def gerar_url_download(s3_key):
     try:
-        body = event.get("body", {})
-        if isinstance(body, str):
-            body = json.loads(body)
-
         bucket = os.environ.get('S3_BUCKET_NAME', 'aldeias-arquivos')
-        s3_key = body.get('s3_key')
 
         if not s3_key:
             return {
@@ -46,10 +37,7 @@ def lambda_handler(event, context):
 
         url = s3_client.generate_presigned_url(
             'get_object',
-            Params={
-                'Bucket': bucket,
-                'Key': s3_key
-            },
+            Params={'Bucket': bucket, 'Key': s3_key},
             ExpiresIn=300
         )
 
@@ -58,7 +46,6 @@ def lambda_handler(event, context):
             "statusCode": 200,
             "body": json.dumps({"url": url, "arquivo": s3_key.split('/')[-1]})
         }
-
     except Exception as e:
         msg_error = f"Erro ao gerar URL de download: {str(e)}"
         logger.error(msg_error)
@@ -96,7 +83,6 @@ def listar_arquivos(equipe):
 
         logger.info(f"Listados {len(arquivos)} arquivos para equipe: {equipe}")
         return arquivos
-
     except Exception as e:
         logger.error(f"Erro ao listar arquivos da equipe {equipe}: {str(e)}")
         return []

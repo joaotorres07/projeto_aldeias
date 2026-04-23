@@ -1,18 +1,28 @@
 import json
 import os
-import pymysql
 from datetime import datetime, timedelta
 from functools import wraps
 
 from flask import Flask, render_template, request, session, redirect, url_for, flash
-from lambda_get_dados import lambda_handler
-from lambda_cadastro import lambda_handler as lambda_handler_cadastro
-from lambda_get_aldeeiros import lambda_handler as lambda_handler_aldeeiros
-from lambda_gerar_formacao import lambda_handler as lambda_handler_formacao
-from lambda_registrar_presenca import lambda_handler as lambda_handler_presenca
-from lambda_envia_alerta_wpp_meta import lambda_handler as lambda_handler_whatsapp
-from lambda_auth import login as auth_login, cadastrar_usuario, solicitar_recuperacao, confirmar_recuperacao
-from lambda_download_s3 import lambda_handler as lambda_handler_download, listar_arquivos
+from dados_function import get_dados_aldeias, decimal_serializer
+from cadastro_function import salvar_aldeeiro
+from aldeeiros_function import pesquisar_aldeeiros
+from formacao_function import abrir_formacao as abrir_formacao_fn
+from presenca_function import registrar_presenca as registrar_presenca_fn
+from whatsapp_function import enviar_whatsapp as enviar_whatsapp_fn
+from auth_functions import login as auth_login, cadastrar_usuario_fn as cadastrar_usuario, solicitar_recuperacao, confirmar_recuperacao
+from download_s3_function import gerar_url_download, listar_arquivos
+
+from database_function import (
+    get_aldeeiro_por_email, get_aldeeiro_relacoes, buscar_aldeeiro_por_cpf_db,
+    buscar_aldeeiro_status_por_cpf, ativar_desativar_aldeeiro_db,
+    get_perfil_usuario, get_perfis, adicionar_remover_perfis,
+    get_formacoes, get_formacoes_por_nucleo, consultar_formacoes_db,
+    get_formacao_por_id, get_presentes_por_formacao,
+    contar_formacoes_nucleo, relatorio_presenca_db,
+    get_info_nucleo, buscar_nucleo_por_id, cadastrar_atualizar_nucleo,
+    invalidar_cache, select_nucleos
+)
 
 template_path = "C:/Users/joao-/Documents/GitHub/projeto_aldeias/templates"
 static_path = os.path.join(os.path.dirname(template_path), "templates", "img")
@@ -20,7 +30,6 @@ application = Flask(__name__, template_folder=template_path, static_folder=stati
 application.secret_key = os.environ.get('SECRET_KEY', 'aldeias-secret-key-2026')
 application.permanent_session_lifetime = timedelta(minutes=5)
 
-NUCLEOS_CACHE = None
 
 
 @application.before_request
@@ -175,7 +184,7 @@ def index():
 @application.route("/aldeeiro/form", methods=["GET", "POST"])
 @login_required
 def form_aldeeiro():
-    response = lambda_handler({}, None)
+    response = get_dados_aldeias()
     data = json.loads(response["body"])
     aldeeiro = get_aldeeiro_por_email(session.get('usuario_email'))
 
@@ -207,7 +216,7 @@ def form_aldeeiro():
 def salvar_atualizar_aldeeiro():
     form_data = request.form.to_dict(flat=False)
     form_data['email'] = [session.get('usuario_email')]
-    result = lambda_handler_cadastro({"body": form_data}, None)
+    result = salvar_aldeeiro(form_data)
 
     status_code = result.get("statusCode")
     if status_code == 200:
@@ -231,7 +240,7 @@ def salvar_atualizar_aldeeiro():
 @perfil_required('Coordenador')
 def listar_aldeeiros():
     nucleos = get_nucleos()
-    response = lambda_handler({}, None)
+    response = get_dados_aldeias()
     dados = json.loads(response["body"])
     return render_template(
         "listar-aldeeiros.html",
@@ -247,15 +256,14 @@ def listar_aldeeiros():
 def pesquisar_aldeeeiros():
     nome = request.args.get("nome") or request.form.get("nome")
     nucleo = request.args.get("nucleo") or request.form.get("nucleo")
-    filtros = {"body": {
+    filtros = {
         "nome": nome,
         "nucleo": nucleo
-    }}
+    }
 
-    result = lambda_handler_aldeeiros(filtros, None)
+    result = pesquisar_aldeeiros(filtros)
     aldeeiros = json.loads(result["body"])
 
-    # Filtrar por aldeias_fez, aldeias_serviu, equipes no lado do app
     sel_aldeias_fez = request.form.getlist("aldeias_fez")
     sel_aldeias_serviu = request.form.getlist("aldeias_serviu")
     sel_equipes = request.form.getlist("equipes")
@@ -277,7 +285,7 @@ def pesquisar_aldeeeiros():
             filtered.append(a)
         aldeeiros = filtered
 
-    response = lambda_handler({}, None)
+    response = get_dados_aldeias()
     dados = json.loads(response["body"])
 
     return render_template(
@@ -307,7 +315,7 @@ def abrir_formacao():
             "tema": request.form.get("tema"),
             "cpf_formador": aldeeiro['cpf'] if aldeeiro else None
         }
-        result = lambda_handler_formacao({"body": body}, None)
+        result = abrir_formacao_fn(body)
         if result["statusCode"] == 200:
             flash("Formação aberta com sucesso!", "success")
         else:
@@ -330,7 +338,7 @@ def registrar_presenca():
             "id_formacao": request.form.get("id_formacao"),
             "nucleo": request.form.get("nucleo")
         }
-        result = lambda_handler_presenca({"body": body}, None)
+        result = registrar_presenca_fn(body)
         if result["statusCode"] == 200:
             flash("Presença registrada com sucesso!", "success")
         else:
@@ -378,18 +386,6 @@ def arquivos_informativos():
     ]
 
     equipes = []
-    ''' for eq in equipes_config:
-        arquivos = listar_arquivos(eq["pasta"])
-        for arq in arquivos:
-            tamanho = arq.get("tamanho", 0)
-            if tamanho >= 1048576:
-                arq["tamanho_formatado"] = f"{tamanho / 1048576:.1f} MB"
-            elif tamanho >= 1024:
-                arq["tamanho_formatado"] = f"{tamanho / 1024:.1f} KB"
-            else:
-                arq["tamanho_formatado"] = f"{tamanho} B"
-        equipes.append({"nome": eq["nome"], "arquivos": arquivos})
-    '''
     return render_template("arquivos_informativos.html", equipes=equipes)
 
 
@@ -401,7 +397,7 @@ def download_arquivo():
         flash("Arquivo não informado.", "error")
         return redirect(url_for('arquivos_informativos'))
 
-    result = lambda_handler_download({"body": {"s3_key": s3_key}}, None)
+    result = gerar_url_download(s3_key)
     if result["statusCode"] == 200:
         data = json.loads(result["body"])
         return redirect(data["url"])
@@ -431,7 +427,7 @@ def enviar_whatsapp():
                 "mensagem": request.form.get("mensagem")
             }
 
-        result = lambda_handler_whatsapp({"body": body}, None)
+        result = enviar_whatsapp_fn(body)
         if result["statusCode"] == 200:
             data = json.loads(result["body"])
             flash(f"Mensagens enviadas! Total: {data.get('total')}, Sucesso: {data.get('enviadas')}, Falhas: {data.get('falhas')}", "success")
@@ -455,44 +451,11 @@ def informacoes_gerais():
 @login_required
 def api_info_nucleo():
     nucleo_id = request.args.get("id", "")
-    connection = None
     try:
-        connection = pymysql.connect(
-            host=os.environ['DB_HOST'],
-            user=os.environ['DB_USER'],
-            password=os.environ['DB_PASSWORD'],
-            database=os.environ['DB_NAME'],
-            cursorclass=pymysql.cursors.DictCursor
-        )
-        with connection.cursor() as cursor:
-            # Dados do núcleo
-            cursor.execute(
-                "SELECT endereco, dias_reuniao FROM db_aldeias.tb_nucleo WHERE id = %s", (nucleo_id,)
-            )
-            nucleo = cursor.fetchone() or {}
-
-            # Coordenadores do núcleo
-            cursor.execute("""
-                SELECT a.nome, a.telefone
-                FROM db_aldeias.tb_aldeeiro a
-                JOIN db_aldeias.tb_aldeeiro_perfil ap ON ap.cpf_aldeeiro = a.cpf
-                JOIN db_aldeias.tb_perfil p ON p.id = ap.id_perfil
-                WHERE a.nucleo = %s AND p.descricao = 'Coordenador' AND a.ativo = 1
-                ORDER BY a.nome
-            """, (nucleo_id,))
-            coordenadores = cursor.fetchall()
-
-        resultado = {
-            "endereco": nucleo.get("endereco", ""),
-            "dias_reuniao": nucleo.get("dias_reuniao", ""),
-            "coordenadores": coordenadores
-        }
+        resultado = get_info_nucleo(nucleo_id)
         return json.dumps(resultado, ensure_ascii=False), 200, {"Content-Type": "application/json"}
     except Exception as e:
         return json.dumps({"error": str(e)}), 500, {"Content-Type": "application/json"}
-    finally:
-        if connection:
-            connection.close()
 
 
 # ==================== CONSULTAR FORMAÇÕES ====================
@@ -509,43 +472,11 @@ def consultar_formacoes():
         data_inicio = request.form.get("data_inicio") or None
         data_fim = request.form.get("data_fim") or None
 
-        connection = None
         try:
-            connection = pymysql.connect(
-                host=os.environ['DB_HOST'],
-                user=os.environ['DB_USER'],
-                password=os.environ['DB_PASSWORD'],
-                database=os.environ['DB_NAME'],
-                cursorclass=pymysql.cursors.DictCursor
-            )
-            with connection.cursor() as cursor:
-                sql = """
-                    SELECT f.id, f.data_formacao, f.tema, n.nome AS nucleo,
-                           COALESCE(a.nome, 'Não informado') AS formador
-                    FROM db_aldeias.tb_formacao f
-                    JOIN db_aldeias.tb_nucleo n ON n.id = f.nucleo
-                    LEFT JOIN db_aldeias.tb_aldeeiro a ON a.cpf = f.cpf_formador
-                    WHERE f.nucleo = %s
-                """
-                params = [nucleo]
-
-                if data_inicio:
-                    sql += " AND f.data_formacao >= %s"
-                    params.append(data_inicio)
-                if data_fim:
-                    sql += " AND f.data_formacao <= %s"
-                    params.append(data_fim)
-
-                sql += " ORDER BY f.data_formacao DESC, f.tema"
-
-                cursor.execute(sql, params)
-                resultados = cursor.fetchall()
+            resultados = consultar_formacoes_db(nucleo, data_inicio, data_fim)
         except Exception as e:
             flash(f"Erro ao consultar formações: {str(e)}", "error")
             resultados = []
-        finally:
-            if connection:
-                connection.close()
 
     filtros = {}
     if request.method == "POST":
@@ -569,37 +500,8 @@ def consultar_formacoes():
 @login_required
 @perfil_required('Coordenador')
 def lista_presentes_formacao(id_formacao):
-    connection = None
-    formacao = None
-    presentes = []
-    try:
-        connection = pymysql.connect(
-            host=os.environ['DB_HOST'],
-            user=os.environ['DB_USER'],
-            password=os.environ['DB_PASSWORD'],
-            database=os.environ['DB_NAME'],
-            cursorclass=pymysql.cursors.DictCursor
-        )
-        with connection.cursor() as cursor:
-            cursor.execute(
-                "SELECT f.tema, f.data_formacao FROM db_aldeias.tb_formacao f WHERE f.id = %s",
-                (id_formacao,)
-            )
-            formacao = cursor.fetchone()
-
-            cursor.execute("""
-                SELECT a.nome
-                FROM db_aldeias.tb_frequencia_aldeeiro fa
-                JOIN db_aldeias.tb_aldeeiro a ON a.cpf = fa.cpf_aldeeiro
-                WHERE fa.id_formacao = %s
-                ORDER BY a.nome
-            """, (id_formacao,))
-            presentes = cursor.fetchall()
-    except Exception as e:
-        flash(f"Erro ao consultar presentes: {str(e)}", "error")
-    finally:
-        if connection:
-            connection.close()
+    formacao = get_formacao_por_id(id_formacao)
+    presentes = get_presentes_por_formacao(id_formacao)
 
     return render_template(
         "lista_presentes.html",
@@ -620,74 +522,19 @@ def relatorio_presenca():
         nucleo = request.form.get("nucleo")
         data_inicio = request.form.get("data_inicio") or None
         data_fim = request.form.get("data_fim") or None
+        zero_presenca = request.form.get("zero_presenca")
+        min_presenca = request.form.get("min_presenca")
 
-        connection = None
         try:
-            connection = pymysql.connect(
-                host=os.environ['DB_HOST'],
-                user=os.environ['DB_USER'],
-                password=os.environ['DB_PASSWORD'],
-                database=os.environ['DB_NAME'],
-                cursorclass=pymysql.cursors.DictCursor
+            total_formacoes_nucleo = contar_formacoes_nucleo(nucleo, data_inicio, data_fim)
+            resultados = relatorio_presenca_db(
+                nucleo, data_inicio, data_fim,
+                zero_presenca=bool(zero_presenca),
+                min_presenca=min_presenca
             )
-            with connection.cursor() as cursor:
-                sql_count = """
-                    SELECT COUNT(*) AS total
-                    FROM db_aldeias.tb_formacao
-                    WHERE nucleo = %s
-                """
-                params_count = [nucleo]
-                if data_inicio:
-                    sql_count += " AND data_formacao >= %s"
-                    params_count.append(data_inicio)
-                if data_fim:
-                    sql_count += " AND data_formacao <= %s"
-                    params_count.append(data_fim)
-                cursor.execute(sql_count, params_count)
-                total_formacoes_nucleo = cursor.fetchone()['total']
-
-                join_extra = ""
-                join_params = []
-                if data_inicio:
-                    join_extra += " AND f.data_formacao >= %s"
-                    join_params.append(data_inicio)
-                if data_fim:
-                    join_extra += " AND f.data_formacao <= %s"
-                    join_params.append(data_fim)
-
-                sql = f"""
-                    SELECT a.nome, n.nome AS nucleo,
-                           COUNT(DISTINCT fa.id) AS total_formacoes,
-                           MAX(f.data_formacao) AS ultima_presenca
-                    FROM db_aldeias.tb_aldeeiro a
-                    JOIN db_aldeias.tb_nucleo n ON n.id = a.nucleo
-                    LEFT JOIN db_aldeias.tb_frequencia_aldeeiro fa ON fa.cpf_aldeeiro = a.cpf
-                    LEFT JOIN db_aldeias.tb_formacao f ON f.id = fa.id_formacao{join_extra}
-                    WHERE a.nucleo = %s AND a.ativo = 1
-                """
-                params = join_params + [nucleo]
-
-                sql += " GROUP BY a.cpf, a.nome, n.nome"
-
-                zero_presenca = request.form.get("zero_presenca")
-                min_presenca = request.form.get("min_presenca")
-
-                if zero_presenca:
-                    sql += " HAVING total_formacoes = 0"
-                elif min_presenca:
-                    sql += " HAVING total_formacoes >= %s"
-                    params.append(int(min_presenca))
-
-                sql += " ORDER BY total_formacoes DESC, a.nome"
-
-                cursor.execute(sql, params)
-                resultados = cursor.fetchall()
         except Exception as e:
             flash(f"Erro ao consultar relatório: {str(e)}", "error")
             resultados = []
-        finally:
-            if connection:
-                connection.close()
 
     filtros = {}
     if request.method == "POST":
@@ -719,55 +566,14 @@ def gerenciar_perfis():
         perfis_ids = request.form.getlist("id_perfil")
         acao = request.form.get("acao")
 
-        connection = None
         try:
-            connection = pymysql.connect(
-                host=os.environ['DB_HOST'],
-                user=os.environ['DB_USER'],
-                password=os.environ['DB_PASSWORD'],
-                database=os.environ['DB_NAME'],
-                cursorclass=pymysql.cursors.DictCursor
-            )
-            with connection.cursor() as cursor:
-                for id_perfil in perfis_ids:
-                    if acao == "adicionar":
-                        cursor.execute(
-                            "INSERT IGNORE INTO db_aldeias.tb_aldeeiro_perfil (cpf_aldeeiro, id_perfil) VALUES (%s, %s)",
-                            (cpf, id_perfil)
-                        )
-                    elif acao == "remover":
-                        cursor.execute(
-                            "DELETE FROM db_aldeias.tb_aldeeiro_perfil WHERE cpf_aldeeiro = %s AND id_perfil = %s",
-                            (cpf, id_perfil)
-                        )
-                connection.commit()
-                flash(f"Perfil(is) {'adicionado(s)' if acao == 'adicionar' else 'removido(s)'} com sucesso!", "success")
+            adicionar_remover_perfis(cpf, perfis_ids, acao)
+            flash(f"Perfil(is) {'adicionado(s)' if acao == 'adicionar' else 'removido(s)'} com sucesso!", "success")
         except Exception as e:
             flash(f"Erro: {str(e)}", "error")
-        finally:
-            if connection:
-                connection.close()
         return redirect(url_for('gerenciar_perfis'))
 
-    connection = None
-    perfis = []
-    try:
-        connection = pymysql.connect(
-            host=os.environ['DB_HOST'],
-            user=os.environ['DB_USER'],
-            password=os.environ['DB_PASSWORD'],
-            database=os.environ['DB_NAME'],
-            cursorclass=pymysql.cursors.DictCursor
-        )
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT id, descricao FROM db_aldeias.tb_perfil ORDER BY descricao")
-            perfis = cursor.fetchall()
-    except Exception:
-        pass
-    finally:
-        if connection:
-            connection.close()
-
+    perfis = get_perfis()
     return render_template("gerenciar_perfis.html", perfis=perfis, nucleos=get_nucleos())
 
 
@@ -776,27 +582,11 @@ def gerenciar_perfis():
 @perfil_required('Administrador')
 def buscar_aldeeiro_por_cpf():
     cpf = request.args.get("cpf", "")
-    connection = None
-    try:
-        connection = pymysql.connect(
-            host=os.environ['DB_HOST'],
-            user=os.environ['DB_USER'],
-            password=os.environ['DB_PASSWORD'],
-            database=os.environ['DB_NAME'],
-            cursorclass=pymysql.cursors.DictCursor
-        )
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT nome FROM db_aldeias.tb_aldeeiro WHERE cpf = %s", (cpf,))
-            row = cursor.fetchone()
-            if row:
-                return json.dumps({"nome": row['nome']}), 200, {"Content-Type": "application/json"}
-            else:
-                return json.dumps({"nome": ""}), 404, {"Content-Type": "application/json"}
-    except Exception:
-        return json.dumps({"nome": ""}), 500, {"Content-Type": "application/json"}
-    finally:
-        if connection:
-            connection.close()
+    row = buscar_aldeeiro_por_cpf_db(cpf)
+    if row:
+        return json.dumps({"nome": row['nome']}), 200, {"Content-Type": "application/json"}
+    else:
+        return json.dumps({"nome": ""}), 404, {"Content-Type": "application/json"}
 
 
 @application.route("/admin/buscar-aldeeiro-status", methods=["GET"])
@@ -804,27 +594,11 @@ def buscar_aldeeiro_por_cpf():
 @perfil_required('Administrador')
 def buscar_aldeeiro_status():
     cpf = request.args.get("cpf", "")
-    connection = None
-    try:
-        connection = pymysql.connect(
-            host=os.environ['DB_HOST'],
-            user=os.environ['DB_USER'],
-            password=os.environ['DB_PASSWORD'],
-            database=os.environ['DB_NAME'],
-            cursorclass=pymysql.cursors.DictCursor
-        )
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT nome, ativo FROM db_aldeias.tb_aldeeiro WHERE cpf = %s", (cpf,))
-            row = cursor.fetchone()
-            if row:
-                return json.dumps({"nome": row['nome'], "ativo": bool(row['ativo'])}), 200, {"Content-Type": "application/json"}
-            else:
-                return json.dumps({"nome": ""}), 404, {"Content-Type": "application/json"}
-    except Exception:
-        return json.dumps({"nome": ""}), 500, {"Content-Type": "application/json"}
-    finally:
-        if connection:
-            connection.close()
+    row = buscar_aldeeiro_status_por_cpf(cpf)
+    if row:
+        return json.dumps({"nome": row['nome'], "ativo": bool(row['ativo'])}), 200, {"Content-Type": "application/json"}
+    else:
+        return json.dumps({"nome": ""}), 404, {"Content-Type": "application/json"}
 
 
 @application.route("/admin/buscar-nucleo", methods=["GET"])
@@ -832,30 +606,11 @@ def buscar_aldeeiro_status():
 @perfil_required('Administrador')
 def buscar_nucleo():
     nucleo_id = request.args.get("id", "")
-    connection = None
-    try:
-        connection = pymysql.connect(
-            host=os.environ['DB_HOST'],
-            user=os.environ['DB_USER'],
-            password=os.environ['DB_PASSWORD'],
-            database=os.environ['DB_NAME'],
-            cursorclass=pymysql.cursors.DictCursor
-        )
-        with connection.cursor() as cursor:
-            cursor.execute(
-                "SELECT id, nome, endereco, dias_reuniao, ativo FROM db_aldeias.tb_nucleo WHERE id = %s",
-                (nucleo_id,)
-            )
-            row = cursor.fetchone()
-            if row:
-                return json.dumps(row, ensure_ascii=False), 200, {"Content-Type": "application/json"}
-            else:
-                return json.dumps({}), 404, {"Content-Type": "application/json"}
-    except Exception:
-        return json.dumps({}), 500, {"Content-Type": "application/json"}
-    finally:
-        if connection:
-            connection.close()
+    row = buscar_nucleo_por_id(nucleo_id)
+    if row:
+        return json.dumps(row, ensure_ascii=False), 200, {"Content-Type": "application/json"}
+    else:
+        return json.dumps({}), 404, {"Content-Type": "application/json"}
 
 
 @application.route("/admin/ativar-desativar", methods=["POST"])
@@ -866,24 +621,11 @@ def ativar_desativar_aldeeiro():
     acao = request.form.get("acao")
     novo_status = 1 if acao == "ativar" else 0
 
-    connection = None
     try:
-        connection = pymysql.connect(
-            host=os.environ['DB_HOST'],
-            user=os.environ['DB_USER'],
-            password=os.environ['DB_PASSWORD'],
-            database=os.environ['DB_NAME'],
-            cursorclass=pymysql.cursors.DictCursor
-        )
-        with connection.cursor() as cursor:
-            cursor.execute("UPDATE db_aldeias.tb_aldeeiro SET ativo = %s WHERE cpf = %s", (novo_status, cpf))
-            connection.commit()
-            flash(f"Aldeeiro {'ativado' if novo_status == 1 else 'desativado'} com sucesso!", "success")
+        ativar_desativar_aldeeiro_db(cpf, novo_status)
+        flash(f"Aldeeiro {'ativado' if novo_status == 1 else 'desativado'} com sucesso!", "success")
     except Exception as e:
         flash(f"Erro ao alterar status: {str(e)}", "error")
-    finally:
-        if connection:
-            connection.close()
 
     return redirect(url_for('gerenciar_perfis'))
 
@@ -891,7 +633,7 @@ def ativar_desativar_aldeeiro():
 @application.route("/admin/cadastrar-nucleo", methods=["POST"])
 @login_required
 @perfil_required('Administrador')
-def cadastrar_nucleo():
+def cadastrar_nucleo_route():
     acao_nucleo = request.form.get("acao_nucleo")
     nome = request.form.get("nome_nucleo", "").strip()
     endereco = request.form.get("endereco_nucleo", "").strip() or None
@@ -905,46 +647,20 @@ def cadastrar_nucleo():
 
     aldeeiro = get_aldeeiro_por_email(session.get('usuario_email'))
     cpf_alterou = aldeeiro['cpf'] if aldeeiro else None
-    now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    nucleo_id = request.form.get("nucleo_id") if acao_nucleo != "cadastrar" else None
 
-    global NUCLEOS_CACHE
-    connection = None
     try:
-        connection = pymysql.connect(
-            host=os.environ['DB_HOST'],
-            user=os.environ['DB_USER'],
-            password=os.environ['DB_PASSWORD'],
-            database=os.environ['DB_NAME'],
-            cursorclass=pymysql.cursors.DictCursor
-        )
-        with connection.cursor() as cursor:
-            if acao_nucleo == "cadastrar":
-                sql = """
-                    INSERT INTO db_aldeias.tb_nucleo
-                        (nome, endereco, dias_reuniao, ativo, motivo_alteracao, data_criacao, cpf_alterou)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s)
-                """
-                cursor.execute(sql, (nome, endereco, dias_reuniao, ativo, motivo, now, cpf_alterou))
-                flash(f"Núcleo '{nome}' cadastrado com sucesso!", "success")
-            else:
-                nucleo_id = request.form.get("nucleo_id")
-                sql = """
-                    UPDATE db_aldeias.tb_nucleo
-                    SET nome = %s, endereco = %s, dias_reuniao = %s, ativo = %s,
-                        motivo_alteracao = %s, data_update = %s, cpf_alterou = %s
-                    WHERE id = %s
-                """
-                cursor.execute(sql, (nome, endereco, dias_reuniao, ativo, motivo, now, cpf_alterou, nucleo_id))
-                flash(f"Núcleo '{nome}' atualizado com sucesso!", "success")
-            connection.commit()
-            NUCLEOS_CACHE = None
-    except pymysql.err.IntegrityError:
-        flash(f"Já existe um núcleo com o nome '{nome}'.", "error")
+        cadastrar_atualizar_nucleo(acao_nucleo, nome, endereco, dias_reuniao, ativo, motivo, cpf_alterou, nucleo_id)
+        invalidar_cache('nucleos')
+        if acao_nucleo == "cadastrar":
+            flash(f"Núcleo '{nome}' cadastrado com sucesso!", "success")
+        else:
+            flash(f"Núcleo '{nome}' atualizado com sucesso!", "success")
     except Exception as e:
-        flash(f"Erro ao salvar núcleo: {str(e)}", "error")
-    finally:
-        if connection:
-            connection.close()
+        if "Duplicate" in str(e) or "IntegrityError" in str(type(e).__name__):
+            flash(f"Já existe um núcleo com o nome '{nome}'.", "error")
+        else:
+            flash(f"Erro ao salvar núcleo: {str(e)}", "error")
 
     return redirect(url_for('gerenciar_perfis'))
 
@@ -952,130 +668,7 @@ def cadastrar_nucleo():
 # ==================== HELPERS ====================
 
 def get_nucleos():
-    global NUCLEOS_CACHE
-    if NUCLEOS_CACHE is None:
-        response = lambda_handler({}, None)
-        data = json.loads(response["body"])
-        NUCLEOS_CACHE = data.get("nucleos", [])
-    return NUCLEOS_CACHE
-
-
-def get_formacoes():
-    connection = None
-    try:
-        connection = pymysql.connect(
-            host=os.environ['DB_HOST'],
-            user=os.environ['DB_USER'],
-            password=os.environ['DB_PASSWORD'],
-            database=os.environ['DB_NAME'],
-            cursorclass=pymysql.cursors.DictCursor
-        )
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT id, tema, data_formacao, nucleo FROM db_aldeias.tb_formacao WHERE data_formacao = CURDATE() ORDER BY data_formacao DESC")
-            return cursor.fetchall()
-    except Exception:
-        return []
-    finally:
-        if connection:
-            connection.close()
-
-
-def get_formacoes_por_nucleo(nucleo_id):
-    connection = None
-    try:
-        connection = pymysql.connect(
-            host=os.environ['DB_HOST'],
-            user=os.environ['DB_USER'],
-            password=os.environ['DB_PASSWORD'],
-            database=os.environ['DB_NAME'],
-            cursorclass=pymysql.cursors.DictCursor
-        )
-        with connection.cursor() as cursor:
-            cursor.execute(
-                "SELECT id, tema, data_formacao, nucleo FROM db_aldeias.tb_formacao WHERE nucleo = %s AND data_formacao = CURDATE() ORDER BY data_formacao DESC",
-                (nucleo_id,)
-            )
-            return cursor.fetchall()
-    except Exception:
-        return []
-    finally:
-        if connection:
-            connection.close()
-
-
-def get_perfil_usuario(email):
-    connection = None
-    try:
-        connection = pymysql.connect(
-            host=os.environ['DB_HOST'],
-            user=os.environ['DB_USER'],
-            password=os.environ['DB_PASSWORD'],
-            database=os.environ['DB_NAME'],
-            cursorclass=pymysql.cursors.DictCursor
-        )
-        with connection.cursor() as cursor:
-            cursor.execute("""
-                SELECT p.descricao
-                FROM db_aldeias.tb_aldeeiro_perfil ap
-                JOIN db_aldeias.tb_aldeeiro a ON a.cpf = ap.cpf_aldeeiro
-                JOIN db_aldeias.tb_perfil p ON p.id = ap.id_perfil
-                WHERE a.email = %s
-            """, (email,))
-            rows = cursor.fetchall()
-            return [r['descricao'] for r in rows]
-    except Exception:
-        return []
-    finally:
-        if connection:
-            connection.close()
-
-
-def get_aldeeiro_por_email(email):
-    connection = None
-    try:
-        connection = pymysql.connect(
-            host=os.environ['DB_HOST'],
-            user=os.environ['DB_USER'],
-            password=os.environ['DB_PASSWORD'],
-            database=os.environ['DB_NAME'],
-            cursorclass=pymysql.cursors.DictCursor
-        )
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT * FROM db_aldeias.tb_aldeeiro WHERE email = %s", (email,))
-            return cursor.fetchone()
-    except Exception:
-        return None
-    finally:
-        if connection:
-            connection.close()
-
-
-def get_aldeeiro_relacoes(cpf):
-    connection = None
-    result = {'equipes': [], 'aldeias_fez': [], 'aldeias_serviu': []}
-    try:
-        connection = pymysql.connect(
-            host=os.environ['DB_HOST'],
-            user=os.environ['DB_USER'],
-            password=os.environ['DB_PASSWORD'],
-            database=os.environ['DB_NAME'],
-            cursorclass=pymysql.cursors.DictCursor
-        )
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT id_equipe FROM db_aldeias.tb_aldeeiro_equipe WHERE cpf_aldeeiro = %s", (cpf,))
-            result['equipes'] = [r['id_equipe'] for r in cursor.fetchall()]
-
-            cursor.execute("SELECT id_aldeia FROM db_aldeias.tb_aldeeiro_aldeia_fez WHERE cpf_aldeeiro = %s", (cpf,))
-            result['aldeias_fez'] = [r['id_aldeia'] for r in cursor.fetchall()]
-
-            cursor.execute("SELECT id_aldeia FROM db_aldeias.tb_aldeeiro_aldeia_serviu WHERE cpf_aldeeiro = %s", (cpf,))
-            result['aldeias_serviu'] = [r['id_aldeia'] for r in cursor.fetchall()]
-    except Exception:
-        pass
-    finally:
-        if connection:
-            connection.close()
-    return result
+    return select_nucleos()
 
 
 application.run(debug=True)
