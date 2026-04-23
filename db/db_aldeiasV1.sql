@@ -112,13 +112,6 @@ CREATE TABLE `tb_frequencia_aldeeiro` (
   CONSTRAINT `fk_freq_formacao` FOREIGN KEY (`id_formacao`) REFERENCES `tb_formacao` (`id`) ON DELETE CASCADE
 );
 
--- INSERTS INICIAIS
-
-INSERT INTO `tb_nucleo` VALUES (1,'Belo Horizonte'),(2,'Campo Belo'),(3,'Lavras'),(4,'Alfenas'),(5,'Perdões');
-INSERT INTO `tb_perfil` VALUES (1,'Aldeeiro'),(2,'Formador'),(3,'Coordenador'), (4, 'Administrador');
-INSERT INTO `tb_aldeia` VALUES (1,'Aldeia de Aprofundamento'),(2,'Aldeia de Adolescentes'),(3,'Aldeia de Recomeço'),(4,'Aldeia de Aliança de Vida'),(5,'Aldeia de Crescimento'),(6,'Aldeia em Familia'),(7,'Aldeia de Jovens'),(8,'Aldeia da Melhor Idade'),(9,'Aldeia de Compromisso');
-INSERT INTO `tb_equipes` VALUES (1,'Banda','Musica e som'),(2,'Cozinha','Alimentação'),(3,'Liderança','Cuidar do aldeeiro'),(4,'Serviços Gerais','Montagem dos desafios e suporte na solução em eventuais problemas'),(5,'Pequenos Gestos','Organizar locais e encenações'),(6,'Apoio','Responsável pela limpeza do local da aldeia'),(7,'Mediadores','Conduzir a tribo e fazer as reflexões espirituais de cada desafio'),(8,'Virgilia','Orações antes e durante a aldeia'),(9,'Visitação','Pegar as cartas e conduzir a familia do aldeeiro para o momento final'),(10,'Guardião','Fiscalizar a aldeia para o Pe. Pedro'),(11,'Dirigente','Dirigir e conduzir toda a aldeia'),(12,'Segurança','Monitorar as entradas do local para que não ocorra acessos e saídas indevidas'),(13,'Conselheiros','Organizar a aldeia antes e durante e após fazer todos os relatórios'),(14,'Externa','Sair da aldeia para comprar/buscar materiais ou qualquer serviço necessário');
-
 ALTER TABLE db_aldeias.tb_aldeeiro
 ADD COLUMN sexo CHAR(1) NOT NULL
 CHECK (sexo IN ('F', 'M'))
@@ -156,19 +149,6 @@ ADD COLUMN `cidade` VARCHAR(50) NULL AFTER `bairro`,
 ADD COLUMN `uf` CHAR(2) NULL AFTER `cidade`;
 
 
-CREATE INDEX idx_aldeeiro_nome ON tb_aldeeiro (nome);
-CREATE INDEX idx_aldeeiro_cidade_uf ON tb_aldeeiro (cidade, uf);
-CREATE INDEX idx_freq_formacao ON tb_frequencia_aldeeiro (id_formacao);
-CREATE INDEX idx_freq_aldeeiro ON tb_frequencia_aldeeiro (cpf_aldeeiro);
-CREATE INDEX idx_formacao_nucleo ON tb_formacao (nucleo);
-CREATE INDEX idx_formacao_data ON tb_formacao (data_formacao);
-CREATE INDEX idx_ae_equipe ON tb_aldeeiro_equipe (id_equipe);
-CREATE INDEX idx_aaf_aldeia ON tb_aldeeiro_aldeia_fez (id_aldeia);
-CREATE INDEX idx_aas_aldeia ON tb_aldeeiro_aldeia_serviu (id_aldeia);
-CREATE INDEX idx_ap_perfil ON tb_aldeeiro_perfil (id_perfil);
-CREATE INDEX idx_recup_usuario ON tb_recuperacao_senha (usuario_id);
-
-
 ALTER TABLE `tb_formacao`
 ADD COLUMN `cpf_formador` VARCHAR(20) NULL AFTER `nucleo`,
 ADD KEY `fk_formacao_formador` (`cpf_formador`),
@@ -184,3 +164,20 @@ ADD COLUMN `data_update` TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP
 ADD COLUMN `cpf_alterou` VARCHAR(20) NULL AFTER `data_update`,
 ADD KEY `fk_nucleo_cpf_alterou` (`cpf_alterou`),
 ADD CONSTRAINT `fk_nucleo_cpf_alterou` FOREIGN KEY (`cpf_alterou`) REFERENCES `tb_aldeeiro` (`cpf`);
+
+INSERT INTO `tb_nucleo` VALUES (1,'Belo Horizonte'),(2,'Campo Belo'),(3,'Lavras'),(4,'Alfenas'),(5,'Perdões');
+INSERT INTO `tb_perfil` VALUES (1,'Aldeeiro'),(2,'Formador'),(3,'Coordenador'), (4, 'Administrador'), (5, 'Fundador');
+INSERT INTO `tb_aldeia` VALUES (1,'Aldeia de Aprofundamento'),(2,'Aldeia de Adolescentes'),(3,'Aldeia de Recomeço'),(4,'Aldeia de Aliança de Vida'),(5,'Aldeia de Crescimento'),(6,'Aldeia em Familia'),(7,'Aldeia de Jovens'),(8,'Aldeia da Melhor Idade'),(9,'Aldeia de Compromisso');
+INSERT INTO `tb_equipes` VALUES (1,'Banda','Musica e som'),(2,'Cozinha','Alimentação'),(3,'Liderança','Cuidar do aldeeiro'),(4,'Serviços Gerais','Montagem dos desafios e suporte na solução em eventuais problemas'),(5,'Pequenos Gestos','Organizar locais e encenações'),(6,'Apoio','Responsável pela limpeza do local da aldeia'),(7,'Mediadores','Conduzir a tribo e fazer as reflexões espirituais de cada desafio'),(8,'Virgilia','Orações antes e durante a aldeia'),(9,'Visitação','Pegar as cartas e conduzir a familia do aldeeiro para o momento final'),(10,'Guardião','Fiscalizar a aldeia para o Pe. Pedro'),(11,'Dirigente','Dirigir e conduzir toda a aldeia'),(12,'Segurança','Monitorar as entradas do local para que não ocorra acessos e saídas indevidas'),(13,'Conselheiros','Organizar a aldeia antes e durante e após fazer todos os relatórios'),(14,'Externa','Sair da aldeia para comprar/buscar materiais ou qualquer serviço necessário');
+
+CREATE INDEX idx_aldeeiro_nome ON tb_aldeeiro (nome);
+CREATE INDEX idx_aldeeiro_cidade_uf ON tb_aldeeiro (cidade, uf);
+CREATE INDEX idx_freq_formacao ON tb_frequencia_aldeeiro (id_formacao);
+CREATE INDEX idx_freq_aldeeiro ON tb_frequencia_aldeeiro (cpf_aldeeiro);
+CREATE INDEX idx_formacao_nucleo ON tb_formacao (nucleo);
+CREATE INDEX idx_formacao_data ON tb_formacao (data_formacao);
+CREATE INDEX idx_ae_equipe ON tb_aldeeiro_equipe (id_equipe);
+CREATE INDEX idx_aaf_aldeia ON tb_aldeeiro_aldeia_fez (id_aldeia);
+CREATE INDEX idx_aas_aldeia ON tb_aldeeiro_aldeia_serviu (id_aldeia);
+CREATE INDEX idx_ap_perfil ON tb_aldeeiro_perfil (id_perfil);
+CREATE INDEX idx_recup_usuario ON tb_recuperacao_senha (usuario_id);

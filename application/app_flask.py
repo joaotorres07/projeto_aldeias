@@ -15,7 +15,8 @@ from lambda_auth import login as auth_login, cadastrar_usuario, solicitar_recupe
 from lambda_download_s3 import lambda_handler as lambda_handler_download, listar_arquivos
 
 template_path = "C:/Users/joao-/Documents/GitHub/projeto_aldeias/templates"
-application = Flask(__name__, template_folder=template_path)
+static_path = os.path.join(os.path.dirname(template_path), "templates", "img")
+application = Flask(__name__, template_folder=template_path, static_folder=static_path, static_url_path='/img')
 application.secret_key = os.environ.get('SECRET_KEY', 'aldeias-secret-key-2026')
 application.permanent_session_lifetime = timedelta(minutes=5)
 
