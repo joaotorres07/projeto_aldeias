@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "macros_tabela.html" import paginacao, paginacao_js %}
 {% block title %}Consultar Aldeeiro(s) - Aldeias{% endblock %}
 {% block content %}
 <h2 class="mb-4"><i class="bi bi-people"></i> Consultar Aldeeiro(s)</h2>
@@ -13,12 +14,23 @@
             </div>
             <div class="col-8 col-md-3">
                 <label for="nucleo" class="form-label">Núcleo</label>
-                <select class="form-select" id="nucleo" name="nucleo">
-                    <option value="">Todos</option>
-                    {% for n in nucleos %}
-                        <option value="{{ n.id }}" {{ 'selected' if filtro_nucleo|default('') == n.id|string }}>{{ n.nome }}</option>
-                    {% endfor %}
-                </select>
+                {% if not is_fundador and nucleo_usuario %}
+                    <select class="form-select" id="nucleo" disabled>
+                        {% for n in nucleos %}
+                            {% if n.id == nucleo_usuario %}
+                                <option value="{{ n.id }}" selected>{{ n.nome }}</option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                    <input type="hidden" name="nucleo" value="{{ nucleo_usuario }}">
+                {% else %}
+                    <select class="form-select" id="nucleo" name="nucleo">
+                        <option value="">Todos</option>
+                        {% for n in nucleos %}
+                            <option value="{{ n.id }}" {{ 'selected' if filtro_nucleo|default('') == n.id|string }}>{{ n.nome }}</option>
+                        {% endfor %}
+                    </select>
+                {% endif %}
             </div>
             <div class="col-4 col-md-2">
                 <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search"></i> <span class="d-none d-md-inline">Pesquisar</span></button>
@@ -62,11 +74,12 @@
 {% if aldeeiros %}
 <div class="card p-4">
     <div class="table-responsive">
-        <table class="table table-hover">
+        <table class="table table-hover" id="tblAldeeiros" data-paginated>
             <thead class="table-dark">
                 <tr>
                     <th>Nome</th>
                     <th>Núcleo</th>
+                    <th>Aldeeiro desde</th>
                     <th>Telefone</th>
                     <th>Endereço</th>
                     <th>Aldeias que Fez</th>
@@ -79,6 +92,7 @@
                 <tr>
                     <td>{{ a.nome_aldeeiro }}</td>
                     <td>{{ a.nucleo }}</td>
+                    <td>{{ a.aldeeiro_desde[:10].split('-')|reverse|join('/') if a.aldeeiro_desde else '' }}</td>
                     <td>{{ a.telefone }}</td>
                     <td>{{ a.endereco|default('') }}</td>
                     <td>
@@ -101,9 +115,13 @@
             </tbody>
         </table>
     </div>
-    <p class="text-muted">Total: {{ aldeeiros|length }} aldeeiro(s) encontrado(s)</p>
+    {{ paginacao('tblAldeeiros') }}
 </div>
 {% elif aldeeiros is defined and aldeeiros|length == 0 %}
 <div class="alert alert-warning">Nenhum aldeeiro encontrado com os filtros informados.</div>
 {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+{{ paginacao_js() }}
 {% endblock %}

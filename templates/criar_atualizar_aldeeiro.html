@@ -10,7 +10,7 @@
 {% endif %}
 
 <div class="card p-4">
-    <form method="POST" action="/salvar_atualizar_aldeeiro">
+    <form method="POST" action="/salvar_atualizar_aldeeiro" id="formCadastro">
         <div class="row g-3">
             <div class="col-12 col-md-6">
                 <label for="nome" class="form-label">Nome Completo</label>
@@ -93,103 +93,51 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-md-12"><hr></div>
+
+            <!-- ========== ALDEIAS QUE FEZ ========== -->
+            <div class="col-12"><hr><h5>Aldeias que fez</h5></div>
             <div class="col-12">
-                <label class="form-label">Aldeias que fez</label>
-                <div class="row">
-                    <div class="col-12 col-md-5">
-                        <label class="form-label text-muted small">Disponíveis</label>
-                        <select class="form-select" id="aldeias_fez_disponiveis" multiple size="5">
-                            {% for a in aldeias_fez %}
-                                {% if a.id not in aldeeiro_aldeias_fez_ids %}
-                                <option value="{{ a.id }}">{{ a.nome_aldeia }}</option>
-                                {% endif %}
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="col-12 col-md-2 d-flex flex-row flex-md-column justify-content-center align-items-center gap-2 my-2 my-md-0">
-                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="moverSelecionados('aldeias_fez_disponiveis','aldeias_fez')"><i class="bi bi-chevron-down d-md-none"></i><i class="bi bi-chevron-right d-none d-md-inline"></i></button>
-                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="moverTodos('aldeias_fez_disponiveis','aldeias_fez')"><i class="bi bi-chevron-double-down d-md-none"></i><i class="bi bi-chevron-double-right d-none d-md-inline"></i></button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="moverSelecionados('aldeias_fez','aldeias_fez_disponiveis')"><i class="bi bi-chevron-up d-md-none"></i><i class="bi bi-chevron-left d-none d-md-inline"></i></button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="moverTodos('aldeias_fez','aldeias_fez_disponiveis')"><i class="bi bi-chevron-double-up d-md-none"></i><i class="bi bi-chevron-double-left d-none d-md-inline"></i></button>
-                    </div>
-                    <div class="col-12 col-md-5">
-                        <label class="form-label text-muted small">Selecionadas</label>
-                        <select class="form-select duo-selecionados" id="aldeias_fez" name="aldeias_fez" multiple size="5">
-                            {% for a in aldeias_fez %}
-                                {% if a.id in aldeeiro_aldeias_fez_ids %}
-                                <option value="{{ a.id }}">{{ a.nome_aldeia }}</option>
-                                {% endif %}
-                            {% endfor %}
-                        </select>
-                    </div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered" id="tblAldeiasFez">
+                        <thead class="table-light">
+                            <tr><th>Aldeia</th><th>Data</th><th>Núcleo</th><th style="width:60px"></th></tr>
+                        </thead>
+                        <tbody id="tbodyAldeiasFez">
+                        </tbody>
+                    </table>
                 </div>
+                <button type="button" class="btn btn-sm btn-outline-success" id="btnIncluirAldeiaFez" onclick="incluirAldeiaFez()">
+                    <i class="bi bi-plus-circle"></i> Incluir Aldeia
+                </button>
+                <input type="hidden" name="aldeias_fez_json" id="aldeias_fez_json" value="[]">
             </div>
+
+            <!-- ========== JÁ SERVIU ========== -->
             <div class="col-12">
-                <div class="form-check">
+                <div class="form-check mt-3">
                     <input class="form-check-input" type="checkbox" id="ja_serviu_check" onchange="toggleServiu()"
-                           {{ 'checked' if aldeeiro and aldeeiro.ja_serviu }}>
+                           {{ 'checked' if aldeeiro and aldeeiro.ja_serviu|int == 1 }}>
                     <label class="form-check-label" for="ja_serviu_check">Já serviu em aldeia?</label>
                 </div>
-                <input type="hidden" name="serviu" id="serviu_value" value="{{ 'true' if aldeeiro and aldeeiro.ja_serviu else 'false' }}">
+                <input type="hidden" name="serviu" id="serviu_value" value="{{ 'true' if aldeeiro and aldeeiro.ja_serviu|int == 1 else 'false' }}">
             </div>
-            <div class="col-12 col-md-6" id="div_aldeias_serviu" style="{{ '' if aldeeiro and aldeeiro.ja_serviu else 'display:none;' }}">
-                <label class="form-label">Aldeias que serviu</label>
-                <div class="row">
-                    <div class="col-12 col-md-5">
-                        <label class="form-label text-muted small">Disponíveis</label>
-                        <select class="form-select" id="aldeias_serviu_disponiveis" multiple size="5">
-                            {% for a in aldeias_serviu %}
-                                {% if a.id not in aldeeiro_aldeias_serviu_ids %}
-                                <option value="{{ a.id }}">{{ a.nome_aldeia }}</option>
-                                {% endif %}
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="col-12 col-md-2 d-flex flex-row flex-md-column justify-content-center align-items-center gap-1 my-2 my-md-0">
-                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="moverSelecionados('aldeias_serviu_disponiveis','aldeias_serviu')"><i class="bi bi-chevron-down d-md-none"></i><i class="bi bi-chevron-right d-none d-md-inline"></i></button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="moverSelecionados('aldeias_serviu','aldeias_serviu_disponiveis')"><i class="bi bi-chevron-up d-md-none"></i><i class="bi bi-chevron-left d-none d-md-inline"></i></button>
-                    </div>
-                    <div class="col-12 col-md-5">
-                        <label class="form-label text-muted small">Selecionadas</label>
-                        <select class="form-select duo-selecionados" id="aldeias_serviu" name="aldeias_serviu" multiple size="5">
-                            {% for a in aldeias_serviu %}
-                                {% if a.id in aldeeiro_aldeias_serviu_ids %}
-                                <option value="{{ a.id }}">{{ a.nome_aldeia }}</option>
-                                {% endif %}
-                            {% endfor %}
-                        </select>
-                    </div>
+
+            <!-- ========== ALDEIAS QUE SERVIU ========== -->
+            <div class="col-12" id="div_aldeias_serviu" style="{{ '' if aldeeiro and aldeeiro.ja_serviu|int == 1 else 'display:none;' }}">
+                <hr><h5>Aldeias e Equipes que serviu</h5>
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered" id="tblAldeiasServiu">
+                        <thead class="table-light">
+                            <tr><th>Aldeia</th><th>Data</th><th>Equipe</th><th>Núcleo</th><th style="width:60px"></th></tr>
+                        </thead>
+                        <tbody id="tbodyAldeiasServiu">
+                        </tbody>
+                    </table>
                 </div>
-            </div>
-            <div class="col-12 col-md-6" id="div_equipes" style="{{ '' if aldeeiro and aldeeiro.ja_serviu else 'display:none;' }}">
-                <label class="form-label">Equipes que participou</label>
-                <div class="row">
-                    <div class="col-12 col-md-5">
-                        <label class="form-label text-muted small">Disponíveis</label>
-                        <select class="form-select" id="equipes_disponiveis" multiple size="5">
-                            {% for e in equipes %}
-                                {% if e.id not in aldeeiro_equipes_ids %}
-                                <option value="{{ e.id }}">{{ e.nome }}</option>
-                                {% endif %}
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="col-12 col-md-2 d-flex flex-row flex-md-column justify-content-center align-items-center gap-1 my-2 my-md-0">
-                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="moverSelecionados('equipes_disponiveis','equipes')"><i class="bi bi-chevron-down d-md-none"></i><i class="bi bi-chevron-right d-none d-md-inline"></i></button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="moverSelecionados('equipes','equipes_disponiveis')"><i class="bi bi-chevron-up d-md-none"></i><i class="bi bi-chevron-left d-none d-md-inline"></i></button>
-                    </div>
-                    <div class="col-12 col-md-5">
-                        <label class="form-label text-muted small">Selecionadas</label>
-                        <select class="form-select duo-selecionados" id="equipes" name="equipes" multiple size="5">
-                            {% for e in equipes %}
-                                {% if e.id in aldeeiro_equipes_ids %}
-                                <option value="{{ e.id }}">{{ e.nome }}</option>
-                                {% endif %}
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
+                <button type="button" class="btn btn-sm btn-outline-success" onclick="incluirAldeiaServiu()">
+                    <i class="bi bi-plus-circle"></i> Incluir Serviço
+                </button>
+                <input type="hidden" name="aldeias_serviu_json" id="aldeias_serviu_json" value="[]">
             </div>
         </div>
         <div class="mt-4">
@@ -202,11 +150,180 @@
 
 {% block extra_js %}
 <script>
+// Data from backend
+const allAldeias = {{ aldeias_fez | tojson }};
+const allEquipes = {{ equipes | tojson }};
+const allNucleos = {{ nucleos | tojson }};
+const existingFez = {{ aldeeiro_aldeias_fez | tojson }};
+const existingServiu = {{ aldeeiro_aldeias_serviu | tojson }};
+
+let aldeiasFezRows = [];
+let aldeiasServiuRows = [];
+let fezRowId = 0;
+let serviuRowId = 0;
+
+// Initialize existing data
+document.addEventListener('DOMContentLoaded', function() {
+    existingFez.forEach(function(item) {
+        addFezRow(item.id_aldeia, item.data_aldeia || '', item.id_nucleo || '');
+    });
+    existingServiu.forEach(function(item) {
+        addServiuRow(item.id_aldeia, item.data_aldeia || '', item.id_equipe || '', item.id_nucleo || '');
+    });
+    updateBtnIncluirFez();
+    syncFezJson();
+    syncServiuJson();
+});
+
+function getUsedAldeiasFez() {
+    return aldeiasFezRows.map(r => String(r.id_aldeia));
+}
+
+function buildAldeiaOptions(selectedId, excludeIds) {
+    let html = '<option value="">Selecione</option>';
+    allAldeias.forEach(function(a) {
+        const aid = String(a.id);
+        if (excludeIds.includes(aid) && aid !== String(selectedId)) return;
+        const sel = (String(a.id) == String(selectedId)) ? 'selected' : '';
+        html += `<option value="${a.id}" ${sel}>${a.nome_aldeia}</option>`;
+    });
+    return html;
+}
+
+function buildNucleoOptions(selectedId) {
+    let html = '<option value="">Selecione</option>';
+    allNucleos.forEach(function(n) {
+        const sel = (String(n.id) == String(selectedId)) ? 'selected' : '';
+        html += `<option value="${n.id}" ${sel}>${n.nome}</option>`;
+    });
+    return html;
+}
+
+function buildEquipeOptions(selectedId) {
+    let html = '<option value="">Selecione</option>';
+    allEquipes.forEach(function(e) {
+        const sel = (String(e.id) == String(selectedId)) ? 'selected' : '';
+        html += `<option value="${e.id}" ${sel}>${e.nome}</option>`;
+    });
+    return html;
+}
+
+// ===== ALDEIAS QUE FEZ =====
+function addFezRow(idAldeia, dataAldeia, idNucleo) {
+    fezRowId++;
+    const rid = fezRowId;
+    aldeiasFezRows.push({rowId: rid, id_aldeia: String(idAldeia), data_aldeia: dataAldeia, id_nucleo: String(idNucleo)});
+
+    const used = getUsedAldeiasFez();
+    const tr = document.createElement('tr');
+    tr.id = 'fez_row_' + rid;
+    tr.innerHTML = `
+        <td><select class="form-select form-select-sm" onchange="updateFezRow(${rid}, 'id_aldeia', this.value)">${buildAldeiaOptions(idAldeia, used)}</select></td>
+        <td><input type="date" class="form-control form-control-sm" value="${dataAldeia}" onchange="updateFezRow(${rid}, 'data_aldeia', this.value)"></td>
+        <td><select class="form-select form-select-sm" onchange="updateFezRow(${rid}, 'id_nucleo', this.value)">${buildNucleoOptions(idNucleo)}</select></td>
+        <td><button type="button" class="btn btn-sm btn-outline-danger" onclick="removeFezRow(${rid})"><i class="bi bi-trash"></i></button></td>
+    `;
+    document.getElementById('tbodyAldeiasFez').appendChild(tr);
+}
+
+function incluirAldeiaFez() {
+    addFezRow('', '', '');
+    updateBtnIncluirFez();
+    syncFezJson();
+}
+
+function updateFezRow(rid, field, value) {
+    const row = aldeiasFezRows.find(r => r.rowId === rid);
+    if (row) row[field] = value;
+    // Rebuild aldeia selects to exclude used ones
+    rebuildFezAldeiaSelects();
+    syncFezJson();
+}
+
+function removeFezRow(rid) {
+    aldeiasFezRows = aldeiasFezRows.filter(r => r.rowId !== rid);
+    const tr = document.getElementById('fez_row_' + rid);
+    if (tr) tr.remove();
+    rebuildFezAldeiaSelects();
+    updateBtnIncluirFez();
+    syncFezJson();
+}
+
+function rebuildFezAldeiaSelects() {
+    const used = getUsedAldeiasFez();
+    aldeiasFezRows.forEach(function(row) {
+        const tr = document.getElementById('fez_row_' + row.rowId);
+        if (tr) {
+            const sel = tr.querySelector('td:first-child select');
+            sel.innerHTML = buildAldeiaOptions(row.id_aldeia, used);
+        }
+    });
+}
+
+function updateBtnIncluirFez() {
+    const btn = document.getElementById('btnIncluirAldeiaFez');
+    btn.disabled = aldeiasFezRows.length >= allAldeias.length;
+}
+
+function syncFezJson() {
+    const data = aldeiasFezRows.filter(r => r.id_aldeia).map(r => ({
+        id_aldeia: r.id_aldeia,
+        data_aldeia: r.data_aldeia || null,
+        id_nucleo: r.id_nucleo || null
+    }));
+    document.getElementById('aldeias_fez_json').value = JSON.stringify(data);
+}
+
+// ===== ALDEIAS QUE SERVIU =====
+function addServiuRow(idAldeia, dataAldeia, idEquipe, idNucleo) {
+    serviuRowId++;
+    const rid = serviuRowId;
+    aldeiasServiuRows.push({rowId: rid, id_aldeia: String(idAldeia), data_aldeia: dataAldeia, id_equipe: String(idEquipe), id_nucleo: String(idNucleo)});
+
+    const tr = document.createElement('tr');
+    tr.id = 'serviu_row_' + rid;
+    tr.innerHTML = `
+        <td><select class="form-select form-select-sm" onchange="updateServiuRow(${rid}, 'id_aldeia', this.value)">${buildAldeiaOptions(idAldeia, [])}</select></td>
+        <td><input type="date" class="form-control form-control-sm" value="${dataAldeia}" onchange="updateServiuRow(${rid}, 'data_aldeia', this.value)"></td>
+        <td><select class="form-select form-select-sm" onchange="updateServiuRow(${rid}, 'id_equipe', this.value)">${buildEquipeOptions(idEquipe)}</select></td>
+        <td><select class="form-select form-select-sm" onchange="updateServiuRow(${rid}, 'id_nucleo', this.value)">${buildNucleoOptions(idNucleo)}</select></td>
+        <td><button type="button" class="btn btn-sm btn-outline-danger" onclick="removeServiuRow(${rid})"><i class="bi bi-trash"></i></button></td>
+    `;
+    document.getElementById('tbodyAldeiasServiu').appendChild(tr);
+}
+
+function incluirAldeiaServiu() {
+    addServiuRow('', '', '', '');
+    syncServiuJson();
+}
+
+function updateServiuRow(rid, field, value) {
+    const row = aldeiasServiuRows.find(r => r.rowId === rid);
+    if (row) row[field] = value;
+    syncServiuJson();
+}
+
+function removeServiuRow(rid) {
+    aldeiasServiuRows = aldeiasServiuRows.filter(r => r.rowId !== rid);
+    const tr = document.getElementById('serviu_row_' + rid);
+    if (tr) tr.remove();
+    syncServiuJson();
+}
+
+function syncServiuJson() {
+    const data = aldeiasServiuRows.filter(r => r.id_aldeia).map(r => ({
+        id_aldeia: r.id_aldeia,
+        data_aldeia: r.data_aldeia || null,
+        id_equipe: r.id_equipe || null,
+        id_nucleo: r.id_nucleo || null
+    }));
+    document.getElementById('aldeias_serviu_json').value = JSON.stringify(data);
+}
+
 function toggleServiu() {
     const checked = document.getElementById('ja_serviu_check').checked;
     document.getElementById('serviu_value').value = checked ? 'true' : 'false';
     document.getElementById('div_aldeias_serviu').style.display = checked ? '' : 'none';
-    document.getElementById('div_equipes').style.display = checked ? '' : 'none';
 }
 
 function mascaraCPF(campo) {
@@ -230,19 +347,16 @@ function validarCPF(cpf) {
     cpf = cpf.replace(/\D/g, '');
     if (cpf.length !== 11) return false;
     if (/^(\d)\1{10}$/.test(cpf)) return false;
-
     let soma = 0;
     for (let i = 0; i < 9; i++) soma += parseInt(cpf.charAt(i)) * (10 - i);
     let resto = (soma * 10) % 11;
     if (resto === 10) resto = 0;
     if (resto !== parseInt(cpf.charAt(9))) return false;
-
     soma = 0;
     for (let i = 0; i < 10; i++) soma += parseInt(cpf.charAt(i)) * (11 - i);
     resto = (soma * 10) % 11;
     if (resto === 10) resto = 0;
     if (resto !== parseInt(cpf.charAt(10))) return false;
-
     return true;
 }
 
@@ -265,20 +379,7 @@ function validarCPFVisual(campo) {
     }
 }
 
-function moverSelecionados(origemId, destinoId) {
-    const origem = document.getElementById(origemId);
-    const destino = document.getElementById(destinoId);
-    const selecionados = Array.from(origem.selectedOptions);
-    selecionados.forEach(opt => destino.appendChild(opt));
-}
-
-function moverTodos(origemId, destinoId) {
-    const origem = document.getElementById(origemId);
-    const destino = document.getElementById(destinoId);
-    Array.from(origem.options).forEach(opt => destino.appendChild(opt));
-}
-
-document.querySelector('form[action="/salvar_atualizar_aldeeiro"]').addEventListener('submit', function(e) {
+document.getElementById('formCadastro').addEventListener('submit', function(e) {
     var cpf = document.getElementById('cpf');
     if (!validarCPF(cpf.value)) {
         e.preventDefault();
@@ -291,11 +392,9 @@ document.querySelector('form[action="/salvar_atualizar_aldeeiro"]').addEventList
     cpf.value = cpf.value.replace(/\D/g, '');
     var tel = document.getElementById('telefone');
     tel.value = tel.value.replace(/\D/g, '');
-
-    // Selecionar todos os itens do lado direito para enviar no form
-    document.querySelectorAll('.duo-selecionados').forEach(function(sel) {
-        Array.from(sel.options).forEach(function(opt) { opt.selected = true; });
-    });
+    // Sync JSON hidden fields
+    syncFezJson();
+    syncServiuJson();
 });
 </script>
 {% endblock %}

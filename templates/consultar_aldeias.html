@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% from "macros_tabela.html" import paginacao, paginacao_js %}
+{% block title %}Consultar Aldeias - Aldeias{% endblock %}
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-compass"></i> Consultar Aldeias</h2>
+
+<div class="card p-4 mb-4">
+    <form method="POST" action="/aldeia/consultar">
+        <div class="row g-3 align-items-end">
+            <div class="col-12 col-md-3">
+                <label for="id_aldeia" class="form-label">Tipo de Aldeia</label>
+                <select class="form-select" id="id_aldeia" name="id_aldeia">
+                    <option value="">Todas</option>
+                    {% for a in aldeias %}
+                        <option value="{{ a.id }}" {{ 'selected' if filtros.get('id_aldeia') == a.id|string }}>{{ a.nome_aldeia }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-6 col-md-2">
+                <label for="data_inicio" class="form-label">Data Início</label>
+                <input type="date" class="form-control" id="data_inicio" name="data_inicio"
+                       value="{{ filtros.get('data_inicio', '') }}">
+            </div>
+            <div class="col-6 col-md-2">
+                <label for="data_fim" class="form-label">Data Fim</label>
+                <input type="date" class="form-control" id="data_fim" name="data_fim"
+                       value="{{ filtros.get('data_fim', '') }}">
+            </div>
+            <div class="col-12 col-md-3">
+                <label for="nucleo" class="form-label">Núcleo</label>
+                {% if not is_fundador and nucleo_usuario %}
+                    <select class="form-select" id="nucleo" disabled>
+                        {% for n in nucleos %}
+                            {% if n.id == nucleo_usuario %}
+                                <option value="{{ n.id }}" selected>{{ n.nome }}</option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                    <input type="hidden" name="nucleo" value="{{ nucleo_usuario }}">
+                {% else %}
+                    <select class="form-select" id="nucleo" name="nucleo">
+                        <option value="">Todos</option>
+                        {% for n in nucleos %}
+                            <option value="{{ n.id }}" {{ 'selected' if filtros.get('nucleo') == n.id|string }}>{{ n.nome }}</option>
+                        {% endfor %}
+                    </select>
+                {% endif %}
+            </div>
+            <div class="col-6 col-md-2">
+                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search"></i> Consultar</button>
+            </div>
+        </div>
+        <div class="row g-3 mt-1">
+            <div class="col-12 col-md-2 offset-md-10">
+                <a href="/aldeia/consultar" class="btn btn-outline-secondary w-100"><i class="bi bi-x-circle"></i> Limpar Filtros</a>
+            </div>
+        </div>
+    </form>
+</div>
+
+{% if resultados is not none %}
+    {% if resultados|length > 0 %}
+    <div class="card p-4">
+        <div class="table-responsive">
+            <table class="table table-hover" id="tblAldeias" data-paginated>
+                <thead class="table-dark">
+                    <tr>
+                        <th>Aldeia</th>
+                        <th>Data</th>
+                        <th>Núcleo</th>
+                        <th class="text-center">Detalhes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in resultados %}
+                    <tr>
+                        <td>{{ r.nome_aldeia }}</td>
+                        <td>{{ r.data_aldeia.strftime('%d/%m/%Y') if r.data_aldeia else 'Não informada' }}</td>
+                        <td>{{ r.nome_nucleo or 'Não informado' }}</td>
+                        <td class="text-center">
+                            <a href="/aldeia/serventes?id_aldeia={{ r.id_aldeia }}&data_aldeia={{ r.data_aldeia.strftime('%Y-%m-%d') if r.data_aldeia else '' }}&id_nucleo={{ r.id_nucleo or '' }}&nome_aldeia={{ r.nome_aldeia }}&nome_nucleo={{ r.nome_nucleo or '' }}"
+                               class="btn btn-sm btn-outline-primary" title="Ver serventes">
+                                <i class="bi bi-people-fill"></i> Ver
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {{ paginacao('tblAldeias') }}
+    </div>
+    {% else %}
+    <div class="alert alert-warning"><i class="bi bi-exclamation-triangle"></i> Nenhuma aldeia encontrada para os filtros informados.</div>
+    {% endif %}
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+{{ paginacao_js() }}
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% from "macros_tabela.html" import paginacao_export, paginacao_js %}
+{% block title %}Serventes da Aldeia - Aldeias{% endblock %}
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-people-fill"></i> Serventes da Aldeia</h2>
+
+<div class="alert alert-info">
+    <strong>{{ nome_aldeia }}</strong>
+    {% if data_aldeia %} — {{ data_aldeia[:10].split('-')|reverse|join('/') }}{% endif %}
+    {% if nome_nucleo %} — Núcleo: {{ nome_nucleo }}{% endif %}
+</div>
+
+{% if serventes and serventes|length > 0 %}
+<div class="card p-4">
+    <div class="table-responsive">
+        <table class="table table-hover" id="tblServentes" data-paginated>
+            <thead class="table-dark">
+                <tr>
+                    <th>Nome</th>
+                    <th>Equipe</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in serventes %}
+                <tr>
+                    <td>{{ s.nome }}</td>
+                    <td>{{ s.equipe or 'Não informada' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {{ paginacao_export('tblServentes', 'Serventes_' ~ nome_aldeia|replace(' ', '_') ~ '_' ~ (data_aldeia[:10].split('-')|reverse|join('-') if data_aldeia else '')) }}
+</div>
+{% else %}
+<div class="alert alert-warning"><i class="bi bi-exclamation-triangle"></i> Nenhum servente encontrado para esta aldeia.</div>
+{% endif %}
+
+<div class="mt-3">
+    <a href="/aldeia/consultar" class="btn btn-secondary"><i class="bi bi-arrow-left"></i> Voltar</a>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ paginacao_js() }}
+{% endblock %}

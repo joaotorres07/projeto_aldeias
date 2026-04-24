@@ -1,9 +1,10 @@
 import json
 import os
+from io import BytesIO
 from datetime import datetime, timedelta
 from functools import wraps
 
-from flask import Flask, render_template, request, session, redirect, url_for, flash
+from flask import Flask, render_template, request, session, redirect, url_for, flash, send_file
 from dados_function import get_dados_aldeias, decimal_serializer
 from cadastro_function import salvar_aldeeiro
 from aldeeiros_function import pesquisar_aldeeiros
@@ -21,14 +22,23 @@ from database_function import (
     get_formacao_por_id, get_presentes_por_formacao,
     contar_formacoes_nucleo, relatorio_presenca_db,
     get_info_nucleo, buscar_nucleo_por_id, cadastrar_atualizar_nucleo,
-    invalidar_cache, select_nucleos
+    invalidar_cache, select_nucleos, select_nucleos_ativos,
+    consultar_aldeias_db, get_serventes_aldeia
 )
 
 template_path = "C:/Users/joao-/Documents/GitHub/projeto_aldeias/templates"
 static_path = os.path.join(os.path.dirname(template_path), "templates", "img")
 application = Flask(__name__, template_folder=template_path, static_folder=static_path, static_url_path='/img')
 application.secret_key = os.environ.get('SECRET_KEY', 'aldeias-secret-key-2026')
-application.permanent_session_lifetime = timedelta(minutes=5)
+application.permanent_session_lifetime = timedelta(minutes=10)
+
+
+def _get_nucleo_usuario():
+    perfil = session.get('perfil', [])
+    is_fundador = 'Fundador' in perfil
+    aldeeiro = get_aldeeiro_por_email(session.get('usuario_email'))
+    nucleo_id = aldeeiro['nucleo'] if aldeeiro else None
+    return nucleo_id, is_fundador
 
 
 
@@ -43,7 +53,7 @@ def check_session_timeout():
         now = datetime.utcnow()
         if last_activity:
             elapsed = (now - datetime.fromisoformat(last_activity)).total_seconds()
-            if elapsed > 300:
+            if elapsed > 600:
                 session.clear()
                 flash('Sessão expirada por inatividade. Faça login novamente.', 'error')
                 return redirect(url_for('login_page'))
@@ -188,15 +198,13 @@ def form_aldeeiro():
     data = json.loads(response["body"])
     aldeeiro = get_aldeeiro_por_email(session.get('usuario_email'))
 
-    aldeeiro_equipes_ids = []
-    aldeeiro_aldeias_fez_ids = []
-    aldeeiro_aldeias_serviu_ids = []
+    aldeeiro_aldeias_fez = []
+    aldeeiro_aldeias_serviu = []
 
     if aldeeiro:
         rel = get_aldeeiro_relacoes(aldeeiro['cpf'])
-        aldeeiro_equipes_ids = rel['equipes']
-        aldeeiro_aldeias_fez_ids = rel['aldeias_fez']
-        aldeeiro_aldeias_serviu_ids = rel['aldeias_serviu']
+        aldeeiro_aldeias_fez = rel['aldeias_fez']
+        aldeeiro_aldeias_serviu = rel['aldeias_serviu']
 
     return render_template(
         "criar_atualizar_aldeeiro.html",
@@ -205,9 +213,8 @@ def form_aldeeiro():
         aldeias_fez=data.get("aldeias_fez"),
         nucleos=data.get("nucleos"),
         aldeeiro=aldeeiro,
-        aldeeiro_equipes_ids=aldeeiro_equipes_ids,
-        aldeeiro_aldeias_fez_ids=aldeeiro_aldeias_fez_ids,
-        aldeeiro_aldeias_serviu_ids=aldeeiro_aldeias_serviu_ids
+        aldeeiro_aldeias_fez=aldeeiro_aldeias_fez,
+        aldeeiro_aldeias_serviu=aldeeiro_aldeias_serviu
     )
 
 
@@ -237,7 +244,7 @@ def salvar_atualizar_aldeeiro():
 
 @application.route("/aldeeiro/listar", methods=["GET", "POST"])
 @login_required
-@perfil_required('Coordenador')
+@perfil_required('Coordenador', 'Fundador')
 def listar_aldeeiros():
     nucleos = get_nucleos()
     response = get_dados_aldeias()
@@ -246,16 +253,20 @@ def listar_aldeeiros():
         "listar-aldeeiros.html",
         nucleos=nucleos,
         aldeias=dados.get("aldeias_fez", []),
-        equipes_lista=dados.get("equipes", [])
+        equipes_lista=dados.get("equipes", []),
+        nucleo_usuario=None,
+        is_fundador=True
     )
 
 
 @application.route("/pesquisarAldeeiros", methods=["GET", "POST"])
 @login_required
-@perfil_required('Coordenador')
+@perfil_required('Coordenador', 'Fundador')
 def pesquisar_aldeeeiros():
     nome = request.args.get("nome") or request.form.get("nome")
     nucleo = request.args.get("nucleo") or request.form.get("nucleo")
+
+
     filtros = {
         "nome": nome,
         "nucleo": nucleo
@@ -272,9 +283,9 @@ def pesquisar_aldeeeiros():
         filtered = []
         for a in aldeeiros:
             rel = get_aldeeiro_relacoes(a.get('cpf', ''))
-            rel_fez = [str(x) for x in rel['aldeias_fez']]
-            rel_serviu = [str(x) for x in rel['aldeias_serviu']]
-            rel_equipes = [str(x) for x in rel['equipes']]
+            rel_fez = [str(int(x['id_aldeia'])) for x in rel['aldeias_fez']]
+            rel_serviu = [str(int(x['id_aldeia'])) for x in rel['aldeias_serviu']]
+            rel_equipes = [str(x['id_equipe']) for x in rel['aldeias_serviu'] if x.get('id_equipe')]
 
             if sel_aldeias_fez and not any(af in rel_fez for af in sel_aldeias_fez):
                 continue
@@ -298,7 +309,9 @@ def pesquisar_aldeeeiros():
         sel_aldeias_serviu=sel_aldeias_serviu,
         sel_equipes=sel_equipes,
         filtro_nome=nome or '',
-        filtro_nucleo=nucleo or ''
+        filtro_nucleo=nucleo or '',
+        nucleo_usuario=None,
+        is_fundador=True
     )
 
 
@@ -306,8 +319,10 @@ def pesquisar_aldeeeiros():
 
 @application.route("/formacao/abrir", methods=["GET", "POST"])
 @login_required
-@perfil_required('Formador')
+@perfil_required('Formador', 'Fundador')
 def abrir_formacao():
+    nucleo_usuario, is_fundador = _get_nucleo_usuario()
+
     if request.method == "POST":
         aldeeiro = get_aldeeiro_por_email(session.get('usuario_email'))
         body = {
@@ -322,8 +337,8 @@ def abrir_formacao():
             flash(json.loads(result.get('body')).get('error', 'Erro ao abrir formação.'), "error")
         return redirect(url_for('abrir_formacao'))
 
-    nucleos = get_nucleos()
-    return render_template("abrir_formacao.html", nucleos=nucleos)
+    nucleos = get_nucleos_ativos()
+    return render_template("abrir_formacao.html", nucleos=nucleos, nucleo_usuario=nucleo_usuario, is_fundador=is_fundador)
 
 
 @application.route("/formacao/presenca", methods=["GET", "POST"])
@@ -411,7 +426,7 @@ def download_arquivo():
 
 @application.route("/whatsapp/enviar", methods=["GET", "POST"])
 @login_required
-@perfil_required('Coordenador')
+@perfil_required('Coordenador', 'Fundador')
 def enviar_whatsapp():
     if request.method == "POST":
         tipo_envio = request.form.get("tipo_envio")
@@ -462,13 +477,16 @@ def api_info_nucleo():
 
 @application.route("/formacao/consultar", methods=["GET", "POST"])
 @login_required
-@perfil_required('Coordenador')
+@perfil_required('Coordenador', 'Fundador')
 def consultar_formacoes():
-    nucleos = get_nucleos()
+    nucleo_usuario, is_fundador = _get_nucleo_usuario()
+    nucleos = get_nucleos_ativos()
     resultados = None
 
     if request.method == "POST":
         nucleo = request.form.get("nucleo")
+        if not is_fundador and nucleo_usuario:
+            nucleo = str(nucleo_usuario)
         data_inicio = request.form.get("data_inicio") or None
         data_fim = request.form.get("data_fim") or None
 
@@ -490,7 +508,78 @@ def consultar_formacoes():
         "consultar_formacoes.html",
         nucleos=nucleos,
         resultados=resultados,
-        filtros=filtros
+        filtros=filtros,
+        nucleo_usuario=nucleo_usuario,
+        is_fundador=is_fundador
+    )
+
+
+# ==================== CONSULTAR ALDEIAS ====================
+
+@application.route("/aldeia/consultar", methods=["GET", "POST"])
+@login_required
+@perfil_required('Coordenador', 'Fundador')
+def consultar_aldeias():
+    nucleo_usuario, is_fundador = _get_nucleo_usuario()
+    nucleos = get_nucleos()
+    response = get_dados_aldeias()
+    dados = json.loads(response["body"])
+    aldeias = dados.get("aldeias_fez", [])
+    resultados = None
+
+    if request.method == "POST":
+        id_aldeia = request.form.get("id_aldeia") or None
+        data_inicio = request.form.get("data_inicio") or None
+        data_fim = request.form.get("data_fim") or None
+        id_nucleo = request.form.get("nucleo") or None
+
+        if not is_fundador and nucleo_usuario:
+            id_nucleo = str(nucleo_usuario)
+
+        try:
+            resultados = consultar_aldeias_db(id_aldeia, data_inicio, data_fim, id_nucleo)
+        except Exception as e:
+            flash(f"Erro ao consultar aldeias: {str(e)}", "error")
+            resultados = []
+
+    filtros = {}
+    if request.method == "POST":
+        filtros = {
+            'id_aldeia': request.form.get('id_aldeia', ''),
+            'data_inicio': request.form.get('data_inicio', ''),
+            'data_fim': request.form.get('data_fim', ''),
+            'nucleo': request.form.get('nucleo', '')
+        }
+
+    return render_template(
+        "consultar_aldeias.html",
+        nucleos=nucleos,
+        aldeias=aldeias,
+        resultados=resultados,
+        filtros=filtros,
+        nucleo_usuario=nucleo_usuario,
+        is_fundador=is_fundador
+    )
+
+
+@application.route("/aldeia/serventes", methods=["GET"])
+@login_required
+@perfil_required('Coordenador', 'Fundador')
+def lista_serventes_aldeia():
+    id_aldeia = request.args.get("id_aldeia")
+    data_aldeia = request.args.get("data_aldeia") or None
+    id_nucleo = request.args.get("id_nucleo") or None
+    nome_aldeia = request.args.get("nome_aldeia", "")
+    nome_nucleo = request.args.get("nome_nucleo", "")
+
+    serventes = get_serventes_aldeia(id_aldeia, data_aldeia, id_nucleo)
+
+    return render_template(
+        "lista_serventes_aldeia.html",
+        serventes=serventes,
+        nome_aldeia=nome_aldeia,
+        data_aldeia=data_aldeia,
+        nome_nucleo=nome_nucleo
     )
 
 
@@ -498,7 +587,7 @@ def consultar_formacoes():
 
 @application.route("/formacao/<int:id_formacao>/presentes", methods=["GET"])
 @login_required
-@perfil_required('Coordenador')
+@perfil_required('Coordenador', 'Fundador')
 def lista_presentes_formacao(id_formacao):
     formacao = get_formacao_por_id(id_formacao)
     presentes = get_presentes_por_formacao(id_formacao)
@@ -512,14 +601,19 @@ def lista_presentes_formacao(id_formacao):
 
 @application.route("/relatorio/presenca", methods=["GET", "POST"])
 @login_required
-@perfil_required('Coordenador')
+@perfil_required('Coordenador', 'Usuário', 'Fundador')
 def relatorio_presenca():
-    nucleos = get_nucleos()
+    nucleo_usuario, is_fundador = _get_nucleo_usuario()
+    perfil = session.get('perfil', [])
+    pode_ver_todos = is_fundador or 'Usuário' in perfil
+    nucleos = get_nucleos_ativos()
     resultados = None
     total_formacoes_nucleo = 0
 
     if request.method == "POST":
         nucleo = request.form.get("nucleo")
+        if not pode_ver_todos and nucleo_usuario:
+            nucleo = str(nucleo_usuario)
         data_inicio = request.form.get("data_inicio") or None
         data_fim = request.form.get("data_fim") or None
         zero_presenca = request.form.get("zero_presenca")
@@ -551,7 +645,9 @@ def relatorio_presenca():
         nucleos=nucleos,
         resultados=resultados,
         filtros=filtros,
-        total_formacoes_nucleo=total_formacoes_nucleo
+        total_formacoes_nucleo=total_formacoes_nucleo,
+        nucleo_usuario=nucleo_usuario,
+        is_fundador=pode_ver_todos
     )
 
 
@@ -559,7 +655,7 @@ def relatorio_presenca():
 
 @application.route("/admin/perfis", methods=["GET", "POST"])
 @login_required
-@perfil_required('Administrador')
+@perfil_required('Administrador', 'Fundador')
 def gerenciar_perfis():
     if request.method == "POST":
         cpf = request.form.get("cpf_aldeeiro")
@@ -579,7 +675,7 @@ def gerenciar_perfis():
 
 @application.route("/admin/buscar-aldeeiro", methods=["GET"])
 @login_required
-@perfil_required('Administrador')
+@perfil_required('Administrador', 'Fundador')
 def buscar_aldeeiro_por_cpf():
     cpf = request.args.get("cpf", "")
     row = buscar_aldeeiro_por_cpf_db(cpf)
@@ -591,7 +687,7 @@ def buscar_aldeeiro_por_cpf():
 
 @application.route("/admin/buscar-aldeeiro-status", methods=["GET"])
 @login_required
-@perfil_required('Administrador')
+@perfil_required('Administrador', 'Fundador')
 def buscar_aldeeiro_status():
     cpf = request.args.get("cpf", "")
     row = buscar_aldeeiro_status_por_cpf(cpf)
@@ -603,7 +699,7 @@ def buscar_aldeeiro_status():
 
 @application.route("/admin/buscar-nucleo", methods=["GET"])
 @login_required
-@perfil_required('Administrador')
+@perfil_required('Administrador', 'Fundador')
 def buscar_nucleo():
     nucleo_id = request.args.get("id", "")
     row = buscar_nucleo_por_id(nucleo_id)
@@ -615,7 +711,7 @@ def buscar_nucleo():
 
 @application.route("/admin/ativar-desativar", methods=["POST"])
 @login_required
-@perfil_required('Administrador')
+@perfil_required('Administrador', 'Fundador')
 def ativar_desativar_aldeeiro():
     cpf = request.form.get("cpf_aldeeiro")
     acao = request.form.get("acao")
@@ -632,13 +728,13 @@ def ativar_desativar_aldeeiro():
 
 @application.route("/admin/cadastrar-nucleo", methods=["POST"])
 @login_required
-@perfil_required('Administrador')
+@perfil_required('Administrador', 'Fundador')
 def cadastrar_nucleo_route():
     acao_nucleo = request.form.get("acao_nucleo")
     nome = request.form.get("nome_nucleo", "").strip()
     endereco = request.form.get("endereco_nucleo", "").strip() or None
     dias_reuniao = request.form.get("dias_reuniao", "").strip() or None
-    ativo = 1 if request.form.get("ativo_nucleo") == "1" else 0
+    ativo_relatorio = 1 if request.form.get("ativo_nucleo") == "1" else 0
     motivo = request.form.get("motivo_alteracao", "").strip() or None
 
     if not nome:
@@ -650,8 +746,9 @@ def cadastrar_nucleo_route():
     nucleo_id = request.form.get("nucleo_id") if acao_nucleo != "cadastrar" else None
 
     try:
-        cadastrar_atualizar_nucleo(acao_nucleo, nome, endereco, dias_reuniao, ativo, motivo, cpf_alterou, nucleo_id)
+        cadastrar_atualizar_nucleo(acao_nucleo, nome, endereco, dias_reuniao, ativo_relatorio, motivo, cpf_alterou, nucleo_id)
         invalidar_cache('nucleos')
+        invalidar_cache('nucleos_ativos')
         if acao_nucleo == "cadastrar":
             flash(f"Núcleo '{nome}' cadastrado com sucesso!", "success")
         else:
@@ -665,10 +762,57 @@ def cadastrar_nucleo_route():
     return redirect(url_for('gerenciar_perfis'))
 
 
+# ==================== EXPORTAR XLSX ====================
+
+@application.route("/exportar/xlsx", methods=["POST"])
+@login_required
+def exportar_xlsx():
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill
+
+    headers = json.loads(request.form.get("headers", "[]"))
+    rows = json.loads(request.form.get("rows", "[]"))
+    titulo = request.form.get("titulo", "Relatorio")
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = titulo[:31]
+
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill(start_color="2D3748", end_color="2D3748", fill_type="solid")
+
+    for col_idx, h in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col_idx, value=h)
+        cell.font = header_font
+        cell.fill = header_fill
+
+    for row_idx, row in enumerate(rows, 2):
+        for col_idx, val in enumerate(row, 1):
+            ws.cell(row=row_idx, column=col_idx, value=val)
+
+    for col in ws.columns:
+        max_len = 0
+        for cell in col:
+            if cell.value:
+                max_len = max(max_len, len(str(cell.value)))
+        ws.column_dimensions[col[0].column_letter].width = min(max_len + 3, 50)
+
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    filename = f"{titulo.replace(' ', '_')}.xlsx"
+    return send_file(output, download_name=filename, as_attachment=True, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
+
 # ==================== HELPERS ====================
 
 def get_nucleos():
     return select_nucleos()
+
+
+def get_nucleos_ativos():
+    return select_nucleos_ativos()
 
 
 application.run(debug=True)

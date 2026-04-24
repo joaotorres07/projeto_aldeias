@@ -7,12 +7,23 @@
     <form method="POST" action="/formacao/abrir">
         <div class="mb-3">
             <label for="nucleo" class="form-label">Núcleo</label>
-            <select class="form-select" id="nucleo" name="nucleo" required>
-                <option value="">Selecione o núcleo</option>
-                {% for n in nucleos %}
-                    <option value="{{ n.id }}">{{ n.nome }}</option>
-                {% endfor %}
-            </select>
+            {% if not is_fundador and nucleo_usuario %}
+                <select class="form-select" id="nucleo" disabled>
+                    {% for n in nucleos %}
+                        {% if n.id == nucleo_usuario %}
+                            <option value="{{ n.id }}" selected>{{ n.nome }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+                <input type="hidden" name="nucleo" value="{{ nucleo_usuario }}">
+            {% else %}
+                <select class="form-select" id="nucleo" name="nucleo" required>
+                    <option value="">Selecione o núcleo</option>
+                    {% for n in nucleos %}
+                        <option value="{{ n.id }}">{{ n.nome }}</option>
+                    {% endfor %}
+                </select>
+            {% endif %}
         </div>
         <div class="mb-3">
             <label for="tema" class="form-label">Tema da Formação</label>
@@ -23,4 +34,5 @@
     </form>
 </div>
 {% endblock %}
+
 

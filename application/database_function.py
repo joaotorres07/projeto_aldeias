@@ -87,18 +87,36 @@ def get_aldeeiro_por_email(email):
 
 def get_aldeeiro_relacoes(cpf):
     connection = None
-    result = {'equipes': [], 'aldeias_fez': [], 'aldeias_serviu': []}
+    result = {'aldeias_fez': [], 'aldeias_serviu': []}
     try:
         connection = get_db_connection()
         with connection.cursor() as cursor:
-            cursor.execute("SELECT id_equipe FROM db_aldeias.tb_aldeeiro_equipe WHERE cpf_aldeeiro = %s", (cpf,))
-            result['equipes'] = [r['id_equipe'] for r in cursor.fetchall()]
+            cursor.execute("""
+                SELECT aaf.id, aaf.id_aldeia, ad.nome_aldeia, aaf.data_aldeia, aaf.id_nucleo, n.nome as nome_nucleo
+                FROM db_aldeias.tb_aldeeiro_aldeia_fez aaf
+                LEFT JOIN db_aldeias.tb_aldeia ad ON ad.id = aaf.id_aldeia
+                LEFT JOIN db_aldeias.tb_nucleo n ON n.id = aaf.id_nucleo
+                WHERE aaf.cpf_aldeeiro = %s
+            """, (cpf,))
+            for r in cursor.fetchall():
+                r['id_aldeia'] = int(r['id_aldeia']) if r['id_aldeia'] else r['id_aldeia']
+                if r.get('data_aldeia'):
+                    r['data_aldeia'] = r['data_aldeia'].isoformat() if hasattr(r['data_aldeia'], 'isoformat') else str(r['data_aldeia'])
+                result['aldeias_fez'].append(r)
 
-            cursor.execute("SELECT id_aldeia FROM db_aldeias.tb_aldeeiro_aldeia_fez WHERE cpf_aldeeiro = %s", (cpf,))
-            result['aldeias_fez'] = [r['id_aldeia'] for r in cursor.fetchall()]
-
-            cursor.execute("SELECT id_aldeia FROM db_aldeias.tb_aldeeiro_aldeia_serviu WHERE cpf_aldeeiro = %s", (cpf,))
-            result['aldeias_serviu'] = [r['id_aldeia'] for r in cursor.fetchall()]
+            cursor.execute("""
+                SELECT aas.id, aas.id_aldeia, ad.nome_aldeia, aas.data_aldeia, aas.id_equipe, e.nome as nome_equipe, aas.id_nucleo, n.nome as nome_nucleo
+                FROM db_aldeias.tb_aldeeiro_aldeia_serviu aas
+                LEFT JOIN db_aldeias.tb_aldeia ad ON ad.id = aas.id_aldeia
+                LEFT JOIN db_aldeias.tb_equipes e ON e.id = aas.id_equipe
+                LEFT JOIN db_aldeias.tb_nucleo n ON n.id = aas.id_nucleo
+                WHERE aas.cpf_aldeeiro = %s
+            """, (cpf,))
+            for r in cursor.fetchall():
+                r['id_aldeia'] = int(r['id_aldeia']) if r['id_aldeia'] else r['id_aldeia']
+                if r.get('data_aldeia'):
+                    r['data_aldeia'] = r['data_aldeia'].isoformat() if hasattr(r['data_aldeia'], 'isoformat') else str(r['data_aldeia'])
+                result['aldeias_serviu'].append(r)
     except Exception:
         pass
     finally:
@@ -215,7 +233,7 @@ def adicionar_remover_perfis(cpf, perfis_ids, acao):
             connection.close()
 
 
-# ==================== FORMAÇÃO ====================
+# ==================== FORMAÇÀO ====================
 
 def get_formacoes():
     connection = None
@@ -432,7 +450,7 @@ def buscar_nucleo_por_id(nucleo_id):
         connection = get_db_connection()
         with connection.cursor() as cursor:
             cursor.execute(
-                "SELECT id, nome, endereco, dias_reuniao, ativo FROM db_aldeias.tb_nucleo WHERE id = %s",
+                "SELECT id, nome, endereco, dias_reuniao, ativo_relatorio FROM db_aldeias.tb_nucleo WHERE id = %s",
                 (nucleo_id,)
             )
             return cursor.fetchone()
@@ -443,7 +461,7 @@ def buscar_nucleo_por_id(nucleo_id):
             connection.close()
 
 
-def cadastrar_atualizar_nucleo(acao, nome, endereco, dias_reuniao, ativo, motivo, cpf_alterou, nucleo_id=None):
+def cadastrar_atualizar_nucleo(acao, nome, endereco, dias_reuniao, ativo_relatorio, motivo, cpf_alterou, nucleo_id=None):
     connection = None
     now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     try:
@@ -452,18 +470,18 @@ def cadastrar_atualizar_nucleo(acao, nome, endereco, dias_reuniao, ativo, motivo
             if acao == "cadastrar":
                 sql = """
                     INSERT INTO db_aldeias.tb_nucleo
-                        (nome, endereco, dias_reuniao, ativo, motivo_alteracao, data_criacao, cpf_alterou)
+                        (nome, endereco, dias_reuniao, ativo_relatorio, motivo_alteracao, data_criacao, cpf_alterou)
                     VALUES (%s, %s, %s, %s, %s, %s, %s)
                 """
-                cursor.execute(sql, (nome, endereco, dias_reuniao, ativo, motivo, now, cpf_alterou))
+                cursor.execute(sql, (nome, endereco, dias_reuniao, ativo_relatorio, motivo, now, cpf_alterou))
             else:
                 sql = """
                     UPDATE db_aldeias.tb_nucleo
-                    SET nome = %s, endereco = %s, dias_reuniao = %s, ativo = %s,
+                    SET nome = %s, endereco = %s, dias_reuniao = %s, ativo_relatorio = %s,
                         motivo_alteracao = %s, data_update = %s, cpf_alterou = %s
                     WHERE id = %s
                 """
-                cursor.execute(sql, (nome, endereco, dias_reuniao, ativo, motivo, now, cpf_alterou, nucleo_id))
+                cursor.execute(sql, (nome, endereco, dias_reuniao, ativo_relatorio, motivo, now, cpf_alterou, nucleo_id))
             connection.commit()
     except Exception as e:
         raise e
@@ -472,7 +490,7 @@ def cadastrar_atualizar_nucleo(acao, nome, endereco, dias_reuniao, ativo, motivo
             connection.close()
 
 
-# ==================== AUTENTICAÇÃO ====================
+# ==================== AUTENTICAÇÀO ====================
 
 def buscar_usuario_por_email(email):
     connection = None
@@ -637,9 +655,11 @@ def inserir_atualizar_aldeeiro(body):
                      logradouro, numero, complemento, bairro, cidade, uf)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 ON DUPLICATE KEY UPDATE
+                    nome = VALUES(nome),
                     telefone = VALUES(telefone),
                     email = VALUES(email),
                     nucleo = VALUES(nucleo),
+                    ja_serviu = VALUES(ja_serviu),
                     logradouro = VALUES(logradouro),
                     numero = VALUES(numero),
                     complemento = VALUES(complemento),
@@ -671,13 +691,20 @@ def inserir_atualizar_aldeeiro(body):
         connection.commit()
 
         cpf = body["cpf"]
-        if body.get("aldeias_fez") and body["aldeias_fez"] != []:
-            _replace_aldeias_fez(connection, cpf, body["aldeias_fez"])
+        import json as _json
+        # aldeias_fez comes as JSON string
+        aldeias_fez_json = body.get("aldeias_fez_json")
+        if isinstance(aldeias_fez_json, list):
+            aldeias_fez_json = aldeias_fez_json[0] if aldeias_fez_json else '[]'
+        aldeias_fez_list = _json.loads(aldeias_fez_json) if aldeias_fez_json else []
+        _replace_aldeias_fez(connection, cpf, aldeias_fez_list)
+
         if ja_serviu == 'true':
-            if body.get("aldeias_serviu") and body["aldeias_serviu"] != []:
-                _replace_aldeias_serviu(connection, cpf, body["aldeias_serviu"])
-            if body.get("equipes") and body["equipes"] != []:
-                _replace_equipes(connection, cpf, body["equipes"])
+            aldeias_serviu_json = body.get("aldeias_serviu_json")
+            if isinstance(aldeias_serviu_json, list):
+                aldeias_serviu_json = aldeias_serviu_json[0] if aldeias_serviu_json else '[]'
+            aldeias_serviu_list = _json.loads(aldeias_serviu_json) if aldeias_serviu_json else []
+            _replace_aldeias_serviu(connection, cpf, aldeias_serviu_list)
 
     except Exception as e:
         raise e
@@ -689,10 +716,10 @@ def inserir_atualizar_aldeeiro(body):
 def _replace_aldeias_fez(connection, cpf, aldeias_fez):
     with connection.cursor() as cursor:
         cursor.execute("DELETE FROM db_aldeias.tb_aldeeiro_aldeia_fez WHERE cpf_aldeeiro = %s", (cpf,))
-        for id_aldeia in aldeias_fez:
+        for item in aldeias_fez:
             cursor.execute(
-                "INSERT INTO db_aldeias.tb_aldeeiro_aldeia_fez (cpf_aldeeiro, id_aldeia) VALUES (%s, %s)",
-                (cpf, id_aldeia)
+                "INSERT INTO db_aldeias.tb_aldeeiro_aldeia_fez (cpf_aldeeiro, id_aldeia, data_aldeia, id_nucleo) VALUES (%s, %s, %s, %s)",
+                (cpf, item['id_aldeia'], item.get('data_aldeia') or None, item.get('id_nucleo') or None)
             )
     connection.commit()
 
@@ -700,21 +727,10 @@ def _replace_aldeias_fez(connection, cpf, aldeias_fez):
 def _replace_aldeias_serviu(connection, cpf, aldeias_serviu):
     with connection.cursor() as cursor:
         cursor.execute("DELETE FROM db_aldeias.tb_aldeeiro_aldeia_serviu WHERE cpf_aldeeiro = %s", (cpf,))
-        for id_aldeia in aldeias_serviu:
+        for item in aldeias_serviu:
             cursor.execute(
-                "INSERT INTO db_aldeias.tb_aldeeiro_aldeia_serviu (cpf_aldeeiro, id_aldeia) VALUES (%s, %s)",
-                (cpf, id_aldeia)
-            )
-    connection.commit()
-
-
-def _replace_equipes(connection, cpf, equipes):
-    with connection.cursor() as cursor:
-        cursor.execute("DELETE FROM db_aldeias.tb_aldeeiro_equipe WHERE cpf_aldeeiro = %s", (cpf,))
-        for id_equipe in equipes:
-            cursor.execute(
-                "INSERT INTO db_aldeias.tb_aldeeiro_equipe (cpf_aldeeiro, id_equipe) VALUES (%s, %s)",
-                (cpf, id_equipe)
+                "INSERT INTO db_aldeias.tb_aldeeiro_aldeia_serviu (cpf_aldeeiro, id_aldeia, data_aldeia, id_equipe, id_nucleo) VALUES (%s, %s, %s, %s, %s)",
+                (cpf, item['id_aldeia'], item.get('data_aldeia') or None, item.get('id_equipe') or None, item.get('id_nucleo') or None)
             )
     connection.commit()
 
@@ -778,6 +794,25 @@ def select_nucleos():
             connection.close()
 
 
+def select_nucleos_ativos():
+    cached = _cache_get('nucleos_ativos')
+    if cached is not None:
+        return cached
+    connection = None
+    try:
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT id, nome FROM db_aldeias.tb_nucleo WHERE ativo_relatorio = 1")
+            resultado = cursor.fetchall()
+            _cache_set('nucleos_ativos', resultado)
+            return resultado
+    except Exception as e:
+        raise e
+    finally:
+        if connection:
+            connection.close()
+
+
 # ==================== CONSULTAR ALDEEIROS ====================
 
 def select_aldeeiros_by(filtros):
@@ -785,17 +820,19 @@ def select_aldeeiros_by(filtros):
     try:
         connection = get_db_connection()
         with connection.cursor() as cursor:
-            sql = """SELECT a.cpf as cpf, a.nome as nome_aldeeiro, n.nome as nucleo, a.telefone as telefone_aldeeiro, e.nome as nome_equipe, 
-                            ad.nome_aldeia as nome_aldeia_fez, ad2.nome_aldeia as aldeia_serviu,
+            sql = """SELECT a.cpf as cpf, a.nome as nome_aldeeiro, n.nome as nucleo, a.telefone as telefone_aldeeiro,
+                            ad.nome_aldeia as nome_aldeia_fez,
+                            aaf.data_aldeia as data_aldeia_fez,
+                            ad2.nome_aldeia as aldeia_serviu,
+                            e.nome as nome_equipe,
                             a.logradouro, a.numero, a.complemento, a.bairro, a.cidade, a.uf 
                         FROM db_aldeias.tb_aldeeiro a
                         LEFT JOIN db_aldeias.tb_aldeeiro_aldeia_fez aaf ON aaf.cpf_aldeeiro = a.cpf
                         LEFT JOIN db_aldeias.tb_aldeeiro_aldeia_serviu aas ON aas.cpf_aldeeiro = a.cpf
-                        LEFT JOIN db_aldeias.tb_aldeeiro_equipe ae ON ae.cpf_aldeeiro = a.cpf
                         INNER JOIN db_aldeias.tb_nucleo n ON n.id = a.nucleo
-                        LEFT JOIN db_aldeias.tb_equipes e ON e.id = ae.id_equipe
                         LEFT JOIN db_aldeias.tb_aldeia ad ON ad.id = aaf.id_aldeia
                         LEFT JOIN db_aldeias.tb_aldeia ad2 ON ad2.id = aas.id_aldeia
+                        LEFT JOIN db_aldeias.tb_equipes e ON e.id = aas.id_equipe
                 WHERE a.ativo = 1
                   """
             params = []
@@ -826,6 +863,73 @@ def insert_formacao_db(nucleo, tema, data_formacao, cpf_formador=None):
             sql = "INSERT INTO db_aldeias.tb_formacao (tema, data_formacao, nucleo, cpf_formador) VALUES (%s, %s, %s, %s)"
             cursor.execute(sql, (tema, data_formacao, nucleo, cpf_formador))
         connection.commit()
+    except Exception as e:
+        raise e
+    finally:
+        if connection:
+            connection.close()
+
+
+# ==================== CONSULTAR ALDEIAS ====================
+
+def consultar_aldeias_db(id_aldeia=None, data_inicio=None, data_fim=None, id_nucleo=None):
+    connection = None
+    try:
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            sql = """
+                SELECT DISTINCT aas.id_aldeia, ad.nome_aldeia, aas.data_aldeia, aas.id_nucleo, n.nome AS nome_nucleo
+                FROM db_aldeias.tb_aldeeiro_aldeia_serviu aas
+                JOIN db_aldeias.tb_aldeia ad ON ad.id = aas.id_aldeia
+                LEFT JOIN db_aldeias.tb_nucleo n ON n.id = aas.id_nucleo
+                WHERE 1=1
+            """
+            params = []
+            if id_aldeia:
+                sql += " AND aas.id_aldeia = %s"
+                params.append(id_aldeia)
+            if data_inicio:
+                sql += " AND aas.data_aldeia >= %s"
+                params.append(data_inicio)
+            if data_fim:
+                sql += " AND aas.data_aldeia <= %s"
+                params.append(data_fim)
+            if id_nucleo:
+                sql += " AND aas.id_nucleo = %s"
+                params.append(id_nucleo)
+
+            sql += " ORDER BY aas.data_aldeia DESC, ad.nome_aldeia"
+            cursor.execute(sql, params)
+            return cursor.fetchall()
+    except Exception as e:
+        raise e
+    finally:
+        if connection:
+            connection.close()
+
+
+def get_serventes_aldeia(id_aldeia, data_aldeia, id_nucleo):
+    connection = None
+    try:
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            sql = """
+                SELECT a.nome, e.nome AS equipe
+                FROM db_aldeias.tb_aldeeiro_aldeia_serviu aas
+                JOIN db_aldeias.tb_aldeeiro a ON a.cpf = aas.cpf_aldeeiro
+                LEFT JOIN db_aldeias.tb_equipes e ON e.id = aas.id_equipe
+                WHERE aas.id_aldeia = %s
+            """
+            params = [id_aldeia]
+            if data_aldeia:
+                sql += " AND aas.data_aldeia = %s"
+                params.append(data_aldeia)
+            if id_nucleo:
+                sql += " AND aas.id_nucleo = %s"
+                params.append(id_nucleo)
+            sql += " ORDER BY a.nome"
+            cursor.execute(sql, params)
+            return cursor.fetchall()
     except Exception as e:
         raise e
     finally:

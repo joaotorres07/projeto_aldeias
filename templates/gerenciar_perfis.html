@@ -110,7 +110,7 @@
                 <input type="text" class="form-control" name="dias_reuniao" id="dias_reuniao" required maxlength="100" placeholder="Ex: Segunda e Quarta">
             </div>
             <div class="col-6 col-md-2">
-                <label class="form-label">Ativo <span class="text-danger">*</span></label>
+                <label class="form-label">Ativo p/ Relatórios <span class="text-danger">*</span></label>
                 <select class="form-select" name="ativo_nucleo" id="ativo_nucleo" required>
                     <option value="1" selected>Sim</option>
                     <option value="0">Não</option>
@@ -288,7 +288,7 @@ function carregarNucleo() {
                 document.getElementById('nome_nucleo').value = data.nome || '';
                 document.getElementById('endereco_nucleo').value = data.endereco || '';
                 document.getElementById('dias_reuniao').value = data.dias_reuniao || '';
-                document.getElementById('ativo_nucleo').value = data.ativo ? '1' : '0';
+                document.getElementById('ativo_nucleo').value = data.ativo_relatorio ? '1' : '0';
                 document.getElementById('motivo_alteracao').value = '';
             }
         })

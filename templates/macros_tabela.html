@@ -1,0 +1,112 @@
+{# ===== PAGINAÇÃO CLIENT-SIDE ===== #}
+{% macro paginacao(tabela_id) %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mt-3 gap-2">
+    <p class="text-muted mb-0" id="{{ tabela_id }}_total"></p>
+    <div class="d-flex align-items-center gap-2">
+        <label class="mb-0 small text-muted">Por página:</label>
+        <select class="form-select form-select-sm" style="width:80px;" id="{{ tabela_id }}_perPage" onchange="paginaTabela('{{ tabela_id }}', 1)">
+            <option value="10">10</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+        </select>
+        <nav>
+            <ul class="pagination pagination-sm mb-0" id="{{ tabela_id }}_pagination"></ul>
+        </nav>
+    </div>
+</div>
+{% endmacro %}
+
+{# ===== PAGINAÇÃO + EXPORT XLSX ===== #}
+{% macro paginacao_export(tabela_id, titulo_export="Relatorio") %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mt-3 gap-2">
+    <p class="text-muted mb-0" id="{{ tabela_id }}_total"></p>
+    <div class="d-flex align-items-center gap-2">
+        <label class="mb-0 small text-muted">Por página:</label>
+        <select class="form-select form-select-sm" style="width:80px;" id="{{ tabela_id }}_perPage" onchange="paginaTabela('{{ tabela_id }}', 1)">
+            <option value="10">10</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+        </select>
+        <nav>
+            <ul class="pagination pagination-sm mb-0" id="{{ tabela_id }}_pagination"></ul>
+        </nav>
+        <form method="POST" action="/exportar/xlsx" class="d-inline">
+            <input type="hidden" name="headers" id="{{ tabela_id }}_exp_headers">
+            <input type="hidden" name="rows" id="{{ tabela_id }}_exp_rows">
+            <input type="hidden" name="titulo" value="{{ titulo_export }}">
+            <button type="submit" class="btn btn-sm btn-outline-success" title="Exportar Excel">
+                <i class="bi bi-file-earmark-spreadsheet"></i> Excel
+            </button>
+        </form>
+    </div>
+</div>
+{% endmacro %}
+
+{# ===== JAVASCRIPT DE PAGINAÇÃO (chamar uma vez no extra_js) ===== #}
+{% macro paginacao_js() %}
+<script>
+function paginaTabela(tabelaId, pagina) {
+    var tabela = document.getElementById(tabelaId);
+    var tbody = tabela.querySelector('tbody');
+    var rows = Array.from(tbody.querySelectorAll('tr'));
+    var perPage = parseInt(document.getElementById(tabelaId + '_perPage').value);
+    var totalRows = rows.length;
+    var totalPages = Math.ceil(totalRows / perPage);
+
+    if (pagina < 1) pagina = 1;
+    if (pagina > totalPages) pagina = totalPages;
+
+    var start = (pagina - 1) * perPage;
+    var end = start + perPage;
+
+    rows.forEach(function(row, idx) {
+        row.style.display = (idx >= start && idx < end) ? '' : 'none';
+    });
+
+    document.getElementById(tabelaId + '_total').textContent =
+        'Exibindo ' + Math.min(start + 1, totalRows) + '-' + Math.min(end, totalRows) + ' de ' + totalRows + ' registro(s)';
+
+    // Pagination nav
+    var pag = document.getElementById(tabelaId + '_pagination');
+    var html = '';
+    html += '<li class="page-item ' + (pagina <= 1 ? 'disabled' : '') + '">';
+    html += '<a class="page-link" href="#" onclick="paginaTabela(\'' + tabelaId + '\',' + (pagina - 1) + ');return false;">&laquo;</a></li>';
+
+    var startPage = Math.max(1, pagina - 2);
+    var endPage = Math.min(totalPages, pagina + 2);
+    for (var p = startPage; p <= endPage; p++) {
+        html += '<li class="page-item ' + (p === pagina ? 'active' : '') + '">';
+        html += '<a class="page-link" href="#" onclick="paginaTabela(\'' + tabelaId + '\',' + p + ');return false;">' + p + '</a></li>';
+    }
+
+    html += '<li class="page-item ' + (pagina >= totalPages ? 'disabled' : '') + '">';
+    html += '<a class="page-link" href="#" onclick="paginaTabela(\'' + tabelaId + '\',' + (pagina + 1) + ');return false;">&raquo;</a></li>';
+    pag.innerHTML = html;
+
+    // Export hidden fields (all rows)
+    var expHeaders = document.getElementById(tabelaId + '_exp_headers');
+    var expRows = document.getElementById(tabelaId + '_exp_rows');
+    if (expHeaders && expRows) {
+        var headers = Array.from(tabela.querySelectorAll('thead th')).map(function(th) {
+            return th.textContent.trim();
+        });
+        var allRows = rows.map(function(row) {
+            return Array.from(row.querySelectorAll('td')).map(function(td) {
+                return td.textContent.trim();
+            }).slice(0, headers.length);
+        });
+        expHeaders.value = JSON.stringify(headers);
+        expRows.value = JSON.stringify(allRows);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('[data-paginated]').forEach(function(t) {
+        paginaTabela(t.id, 1);
+    });
+});
+</script>
+{% endmacro %}
+

@@ -39,6 +39,9 @@
                 <i class="bi bi-list fs-5"></i>
             </button>
             <a class="navbar-brand" href="/init-aldeias"><img src="/img/iconeAldeias.jpeg" alt="Aldeias" style="height: 30px; border-radius: 4px;" class="me-2"> Sistema Aldeias</a>
+            <div class="d-none d-md-block text-center text-light" style="font-size: 0.75rem; opacity: 0.85;">
+                <i class="bi bi-credit-card"></i> Pix para doação: <strong>46.868.977/0001-26</strong> — Aldeias de Vida BH
+            </div>
             <div class="d-flex align-items-center">
                 <span class="text-light me-3 d-none d-sm-inline"><i class="bi bi-person-circle"></i> {{ session.get('usuario_nome', '') }}</span>
                 <a href="/logout" class="btn btn-outline-light btn-sm"><i class="bi bi-box-arrow-right"></i> Sair</a>
@@ -59,17 +62,22 @@
                 <a class="nav-link text-light py-3 px-4" href="/aldeeiro/form"><i class="bi bi-person-fill-gear me-2"></i> Meu Cadastro</a>
                 <a class="nav-link text-light py-3 px-4" href="/formacao/presenca"><i class="bi bi-check2-square me-2"></i> Registrar Presença</a>
                 {% set perfil = session.get('perfil', []) %}
-                {% if 'Formador' in perfil %}
+                {% if 'Formador' in perfil or 'Fundador' in perfil %}
                 <a class="nav-link text-light py-3 px-4" href="/formacao/abrir"><i class="bi bi-journal-plus me-2"></i> Abrir Formação</a>
                 {% endif %}
                 <a class="nav-link text-light py-3 px-4" href="/arquivos"><i class="bi bi-folder2-open me-2"></i> Arquivos e Informativos</a>
-                {% if 'Coordenador' in perfil %}
+                {% if 'Coordenador' in perfil or 'Fundador' in perfil %}
                 <a class="nav-link text-light py-3 px-4" href="/aldeeiro/listar"><i class="bi bi-people me-2"></i> Consultar Aldeeiro(s)</a>
+                {% endif %}
+                {% if 'Coordenador' in perfil or 'Usuário' in perfil or 'Fundador' in perfil %}
                 <a class="nav-link text-light py-3 px-4" href="/relatorio/presenca"><i class="bi bi-clipboard-data me-2"></i> Relatório de Presença</a>
+                {% endif %}
+                {% if 'Coordenador' in perfil or 'Fundador' in perfil %}
                 <a class="nav-link text-light py-3 px-4" href="/formacao/consultar"><i class="bi bi-journal-text me-2"></i> Consultar Formações</a>
+                <a class="nav-link text-light py-3 px-4" href="/aldeia/consultar"><i class="bi bi-compass me-2"></i> Consultar Aldeias</a>
                 <a class="nav-link text-muted py-3 px-4 disabled" href="#" style="pointer-events: none;"><i class="bi bi-whatsapp me-2"></i> Enviar WhatsApp <small>(em breve)</small></a>
                 {% endif %}
-                {% if 'Administrador' in perfil %}
+                {% if 'Administrador' in perfil or 'Fundador' in perfil %}
                 <a class="nav-link text-light py-3 px-4" href="/admin/perfis"><i class="bi bi-shield-lock me-2"></i> Gerenciar Acessos e Cadastros</a>
                 {% endif %}
             </nav>
@@ -84,17 +92,22 @@
                 <a class="nav-link" href="/aldeeiro/form"><i class="bi bi-person-fill-gear"></i> Meu Cadastro</a>
                 <a class="nav-link" href="/formacao/presenca"><i class="bi bi-check2-square"></i> Registrar Presença</a>
                 {% set perfil = session.get('perfil', []) %}
-                {% if 'Formador' in perfil %}
+                {% if 'Formador' in perfil or 'Fundador' in perfil %}
                 <a class="nav-link" href="/formacao/abrir"><i class="bi bi-journal-plus"></i> Abrir Formação</a>
                 {% endif %}
                 <a class="nav-link" href="/arquivos"><i class="bi bi-folder2-open"></i> Arquivos e Informativos</a>
-                {% if 'Coordenador' in perfil %}
+                {% if 'Coordenador' in perfil or 'Fundador' in perfil %}
                 <a class="nav-link" href="/aldeeiro/listar"><i class="bi bi-people"></i> Consultar Aldeeiro(s)</a>
+                {% endif %}
+                {% if 'Coordenador' in perfil or 'Usuário' in perfil or 'Fundador' in perfil %}
                 <a class="nav-link" href="/relatorio/presenca"><i class="bi bi-clipboard-data"></i> Relatório de Presença</a>
+                {% endif %}
+                {% if 'Coordenador' in perfil or 'Fundador' in perfil %}
                 <a class="nav-link" href="/formacao/consultar"><i class="bi bi-journal-text"></i> Consultar Formações</a>
+                <a class="nav-link" href="/aldeia/consultar"><i class="bi bi-compass"></i> Consultar Aldeias</a>
                 <a class="nav-link disabled text-muted" href="#" style="pointer-events: none;"><i class="bi bi-whatsapp"></i> Enviar WhatsApp <small>(em breve)</small></a>
                 {% endif %}
-                {% if 'Administrador' in perfil %}
+                {% if 'Administrador' in perfil or 'Fundador' in perfil %}
                 <a class="nav-link" href="/admin/perfis"><i class="bi bi-shield-lock"></i> Gerenciar Acessos e Cadastros</a>
                 {% endif %}
             </nav>
