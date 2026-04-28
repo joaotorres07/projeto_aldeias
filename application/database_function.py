@@ -130,7 +130,7 @@ def buscar_aldeeiro_por_cpf_db(cpf):
     try:
         connection = get_db_connection()
         with connection.cursor() as cursor:
-            cursor.execute("SELECT nome FROM db_aldeias.tb_aldeeiro WHERE cpf = %s", (cpf,))
+            cursor.execute("SELECT * FROM db_aldeias.tb_aldeeiro WHERE cpf = %s", (cpf,))
             return cursor.fetchone()
     except Exception:
         return None
@@ -241,10 +241,11 @@ def get_formacoes():
         connection = get_db_connection()
         with connection.cursor() as cursor:
             cursor.execute(
-                "SELECT id, tema, data_formacao, nucleo FROM db_aldeias.tb_formacao WHERE data_formacao = CURDATE() ORDER BY data_formacao DESC"
+                "SELECT id, tema, data_formacao, nucleo FROM db_aldeias.tb_formacao WHERE data_formacao = CURDATE() AND ativo = 1 ORDER BY data_formacao DESC"
             )
             return cursor.fetchall()
-    except Exception:
+    except Exception as e:
+        logger.error(f"Erro get_formacoes: {e}")
         return []
     finally:
         if connection:
@@ -257,12 +258,62 @@ def get_formacoes_por_nucleo(nucleo_id):
         connection = get_db_connection()
         with connection.cursor() as cursor:
             cursor.execute(
-                "SELECT id, tema, data_formacao, nucleo FROM db_aldeias.tb_formacao WHERE nucleo = %s AND data_formacao = CURDATE() ORDER BY data_formacao DESC",
+                "SELECT id, tema, data_formacao, nucleo FROM db_aldeias.tb_formacao WHERE nucleo = %s AND data_formacao = CURDATE() AND ativo = 1 ORDER BY data_formacao DESC",
                 (nucleo_id,)
             )
             return cursor.fetchall()
-    except Exception:
+    except Exception as e:
+        logger.error(f"Erro get_formacoes_por_nucleo: {e}")
         return []
+    finally:
+        if connection:
+            connection.close()
+
+
+def get_formacoes_ativas_hoje(nucleo_id=None):
+    """Retorna formações ativas do dia (para exibir no painel abrir/fechar)."""
+    connection = None
+    try:
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            sql = """
+                SELECT f.id, f.tema, f.data_formacao, f.nucleo, n.nome AS nome_nucleo,
+                       COALESCE(a.nome, 'Não informado') AS formador
+                FROM db_aldeias.tb_formacao f
+                JOIN db_aldeias.tb_nucleo n ON n.id = f.nucleo
+                LEFT JOIN db_aldeias.tb_aldeeiro a ON a.cpf = f.cpf_formador
+                WHERE f.data_formacao = CURDATE() AND f.ativo = 1
+            """
+            params = []
+            if nucleo_id:
+                sql += " AND f.nucleo = %s"
+                params.append(nucleo_id)
+            sql += " ORDER BY f.tema"
+            cursor.execute(sql, params)
+            return cursor.fetchall()
+    except Exception as e:
+        logger.error(f"Erro get_formacoes_ativas_hoje: {e}")
+        return []
+    finally:
+        if connection:
+            connection.close()
+
+
+def encerrar_formacao_db(id_formacao):
+    """Encerra uma formação setando ativo = 0, somente se for do dia atual."""
+    connection = None
+    try:
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "UPDATE db_aldeias.tb_formacao SET ativo = 0 WHERE id = %s AND data_formacao = CURDATE()",
+                (id_formacao,)
+            )
+            affected = cursor.rowcount
+        connection.commit()
+        return affected > 0
+    except Exception as e:
+        raise e
     finally:
         if connection:
             connection.close()
@@ -380,18 +431,17 @@ def relatorio_presenca_db(nucleo, data_inicio=None, data_fim=None, zero_presenca
                 join_params.append(data_fim)
 
             sql = f"""
-                SELECT a.nome, n.nome AS nucleo,
+                SELECT a.nome,
                        COUNT(DISTINCT fa.id) AS total_formacoes,
                        MAX(f.data_formacao) AS ultima_presenca
                 FROM db_aldeias.tb_aldeeiro a
-                JOIN db_aldeias.tb_nucleo n ON n.id = a.nucleo
                 LEFT JOIN db_aldeias.tb_frequencia_aldeeiro fa ON fa.cpf_aldeeiro = a.cpf
                 LEFT JOIN db_aldeias.tb_formacao f ON f.id = fa.id_formacao{join_extra}
                 WHERE a.nucleo = %s AND a.ativo = 1
             """
             params = join_params + [nucleo]
 
-            sql += " GROUP BY a.cpf, a.nome, n.nome"
+            sql += " GROUP BY a.cpf, a.nome"
 
             if zero_presenca:
                 sql += " HAVING total_formacoes = 0"
@@ -860,7 +910,7 @@ def insert_formacao_db(nucleo, tema, data_formacao, cpf_formador=None):
     try:
         connection = get_db_connection()
         with connection.cursor() as cursor:
-            sql = "INSERT INTO db_aldeias.tb_formacao (tema, data_formacao, nucleo, cpf_formador) VALUES (%s, %s, %s, %s)"
+            sql = "INSERT INTO db_aldeias.tb_formacao (tema, data_formacao, nucleo, cpf_formador, ativo) VALUES (%s, %s, %s, %s, 1)"
             cursor.execute(sql, (tema, data_formacao, nucleo, cpf_formador))
         connection.commit()
     except Exception as e:

@@ -23,7 +23,8 @@ from database_function import (
     contar_formacoes_nucleo, relatorio_presenca_db,
     get_info_nucleo, buscar_nucleo_por_id, cadastrar_atualizar_nucleo,
     invalidar_cache, select_nucleos, select_nucleos_ativos,
-    consultar_aldeias_db, get_serventes_aldeia
+    consultar_aldeias_db, get_serventes_aldeia,
+    get_formacoes_ativas_hoje, encerrar_formacao_db
 )
 
 template_path = "C:/Users/joao-/Documents/GitHub/projeto_aldeias/templates"
@@ -278,8 +279,9 @@ def pesquisar_aldeeeiros():
     sel_aldeias_fez = request.form.getlist("aldeias_fez")
     sel_aldeias_serviu = request.form.getlist("aldeias_serviu")
     sel_equipes = request.form.getlist("equipes")
+    nunca_serviu = request.form.get("nunca_serviu") == "1"
 
-    if sel_aldeias_fez or sel_aldeias_serviu or sel_equipes:
+    if sel_aldeias_fez or sel_aldeias_serviu or sel_equipes or nunca_serviu:
         filtered = []
         for a in aldeeiros:
             rel = get_aldeeiro_relacoes(a.get('cpf', ''))
@@ -287,6 +289,8 @@ def pesquisar_aldeeeiros():
             rel_serviu = [str(int(x['id_aldeia'])) for x in rel['aldeias_serviu']]
             rel_equipes = [str(x['id_equipe']) for x in rel['aldeias_serviu'] if x.get('id_equipe')]
 
+            if nunca_serviu and len(rel['aldeias_serviu']) > 0:
+                continue
             if sel_aldeias_fez and not any(af in rel_fez for af in sel_aldeias_fez):
                 continue
             if sel_aldeias_serviu and not any(asv in rel_serviu for asv in sel_aldeias_serviu):
@@ -310,8 +314,33 @@ def pesquisar_aldeeeiros():
         sel_equipes=sel_equipes,
         filtro_nome=nome or '',
         filtro_nucleo=nucleo or '',
+        filtro_nunca_serviu=nunca_serviu,
         nucleo_usuario=None,
         is_fundador=True
+    )
+
+
+@application.route("/aldeeiro/detalhar/<cpf>")
+@login_required
+@perfil_required('Coordenador', 'Fundador')
+def detalhar_aldeeiro(cpf):
+    aldeeiro = buscar_aldeeiro_por_cpf_db(cpf)
+    if not aldeeiro:
+        flash('Aldeeiro não encontrado.', 'error')
+        return redirect(url_for('listar_aldeeiros'))
+
+    response = get_dados_aldeias()
+    data = json.loads(response["body"])
+    rel = get_aldeeiro_relacoes(cpf)
+
+    return render_template(
+        "detalhar_aldeeiro.html",
+        aldeeiro=aldeeiro,
+        equipes=data.get("equipes"),
+        aldeias_fez=data.get("aldeias_fez"),
+        nucleos=data.get("nucleos"),
+        aldeeiro_aldeias_fez=rel['aldeias_fez'],
+        aldeeiro_aldeias_serviu=rel['aldeias_serviu']
     )
 
 
@@ -338,7 +367,29 @@ def abrir_formacao():
         return redirect(url_for('abrir_formacao'))
 
     nucleos = get_nucleos_ativos()
-    return render_template("abrir_formacao.html", nucleos=nucleos, nucleo_usuario=nucleo_usuario, is_fundador=is_fundador)
+    formacoes_ativas = get_formacoes_ativas_hoje(nucleo_usuario if not is_fundador else None)
+    return render_template(
+        "abrir_formacao.html",
+        nucleos=nucleos,
+        nucleo_usuario=nucleo_usuario,
+        is_fundador=is_fundador,
+        formacoes_ativas=formacoes_ativas
+    )
+
+
+@application.route("/formacao/encerrar/<int:id_formacao>", methods=["POST"])
+@login_required
+@perfil_required('Formador', 'Fundador')
+def encerrar_formacao(id_formacao):
+    try:
+        sucesso = encerrar_formacao_db(id_formacao)
+        if sucesso:
+            flash("Formação encerrada com sucesso!", "success")
+        else:
+            flash("Não foi possível encerrar a formação. Verifique se ela é do dia de hoje.", "error")
+    except Exception as e:
+        flash(f"Erro ao encerrar formação: {str(e)}", "error")
+    return redirect(url_for('abrir_formacao'))
 
 
 @application.route("/formacao/presenca", methods=["GET", "POST"])
@@ -601,11 +652,11 @@ def lista_presentes_formacao(id_formacao):
 
 @application.route("/relatorio/presenca", methods=["GET", "POST"])
 @login_required
-@perfil_required('Coordenador', 'Usuário', 'Fundador')
+@perfil_required('Coordenador', 'Usuário', 'Fundador', 'Colegiado')
 def relatorio_presenca():
     nucleo_usuario, is_fundador = _get_nucleo_usuario()
     perfil = session.get('perfil', [])
-    pode_ver_todos = is_fundador or 'Usuário' in perfil
+    pode_ver_todos = is_fundador or 'Usuário' in perfil or 'Colegiado' in perfil
     nucleos = get_nucleos_ativos()
     resultados = None
     total_formacoes_nucleo = 0
@@ -662,6 +713,11 @@ def gerenciar_perfis():
         perfis_ids = request.form.getlist("id_perfil")
         acao = request.form.get("acao")
 
+        aldeeiro_logado = get_aldeeiro_por_email(session.get('usuario_email'))
+        if aldeeiro_logado and cpf == aldeeiro_logado['cpf']:
+            flash("Não é permitido alterar o próprio perfil.", "error")
+            return redirect(url_for('gerenciar_perfis'))
+
         try:
             adicionar_remover_perfis(cpf, perfis_ids, acao)
             flash(f"Perfil(is) {'adicionado(s)' if acao == 'adicionar' else 'removido(s)'} com sucesso!", "success")
@@ -670,7 +726,9 @@ def gerenciar_perfis():
         return redirect(url_for('gerenciar_perfis'))
 
     perfis = get_perfis()
-    return render_template("gerenciar_perfis.html", perfis=perfis, nucleos=get_nucleos())
+    aldeeiro_logado = get_aldeeiro_por_email(session.get('usuario_email'))
+    cpf_logado = aldeeiro_logado['cpf'] if aldeeiro_logado else ''
+    return render_template("gerenciar_perfis.html", perfis=perfis, nucleos=get_nucleos(), cpf_logado=cpf_logado)
 
 
 @application.route("/admin/buscar-aldeeiro", methods=["GET"])
@@ -716,6 +774,11 @@ def ativar_desativar_aldeeiro():
     cpf = request.form.get("cpf_aldeeiro")
     acao = request.form.get("acao")
     novo_status = 1 if acao == "ativar" else 0
+
+    aldeeiro_logado = get_aldeeiro_por_email(session.get('usuario_email'))
+    if aldeeiro_logado and cpf == aldeeiro_logado['cpf']:
+        flash("Não é permitido ativar/desativar o próprio cadastro.", "error")
+        return redirect(url_for('gerenciar_perfis'))
 
     try:
         ativar_desativar_aldeeiro_db(cpf, novo_status)

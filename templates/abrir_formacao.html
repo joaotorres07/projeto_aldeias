@@ -1,9 +1,10 @@
 {% extends "base.html" %}
-{% block title %}Abrir Formação - Aldeias{% endblock %}
+{% block title %}Abrir / Fechar Formação - Aldeias{% endblock %}
 {% block content %}
-<h2 class="mb-4"><i class="bi bi-journal-plus"></i> Abrir Formação</h2>
+<h2 class="mb-4"><i class="bi bi-journal-plus"></i> Abrir / Fechar Formação</h2>
 
-<div class="card p-4" style="max-width: 600px; width: 100%;">
+<div class="card p-4 mb-4" style="max-width: 600px; width: 100%;">
+    <h5 class="mb-3">Nova Formação</h5>
     <form method="POST" action="/formacao/abrir">
         <div class="mb-3">
             <label for="nucleo" class="form-label">Núcleo</label>
@@ -33,6 +34,39 @@
         <a href="/init-aldeias" class="btn btn-secondary ms-2">Cancelar</a>
     </form>
 </div>
+
+{% if formacoes_ativas and formacoes_ativas|length > 0 %}
+<div class="card p-4">
+    <h5 class="mb-3"><i class="bi bi-clock-fill text-success"></i> Formações Ativas Hoje</h5>
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>Tema</th>
+                    <th>Núcleo</th>
+                    <th>Formador</th>
+                    <th class="text-center">Ação</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for f in formacoes_ativas %}
+                <tr>
+                    <td>{{ f.tema }}</td>
+                    <td>{{ f.nome_nucleo }}</td>
+                    <td>{{ f.formador }}</td>
+                    <td class="text-center">
+                        <form method="POST" action="/formacao/encerrar/{{ f.id }}" style="display:inline;"
+                              onsubmit="return confirm('Tem certeza que deseja encerrar esta formação? Novas presenças não poderão ser registradas.')">
+                            <button type="submit" class="btn btn-sm btn-danger">
+                                <i class="bi bi-x-circle"></i> Encerrar
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
 {% endblock %}
-
-

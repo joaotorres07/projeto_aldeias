@@ -132,6 +132,8 @@
 
 {% block extra_js %}
 <script>
+const cpfLogado = "{{ cpf_logado }}";
+
 function mascaraCPF(campo) {
     let v = campo.value.replace(/\D/g, '').substring(0, 11);
     if (v.length > 9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
@@ -150,6 +152,14 @@ function buscarAldeeiro() {
     if (cpfDigits.length < 11) {
         nomeField.value = '';
         nomeField.classList.remove('is-valid', 'is-invalid');
+        btn.disabled = true;
+        return;
+    }
+
+    if (cpfDigits === cpfLogado) {
+        nomeField.value = 'Não é permitido alterar o próprio perfil';
+        nomeField.classList.remove('is-valid');
+        nomeField.classList.add('is-invalid');
         btn.disabled = true;
         return;
     }
@@ -196,6 +206,16 @@ function buscarAldeeiro2() {
         nomeField.value = '';
         statusField.value = '-';
         nomeField.classList.remove('is-valid', 'is-invalid');
+        btn.disabled = true;
+        return;
+    }
+
+    if (cpfDigits === cpfLogado) {
+        nomeField.value = 'Não é permitido ativar/desativar o próprio cadastro';
+        nomeField.classList.remove('is-valid');
+        nomeField.classList.add('is-invalid');
+        statusField.value = '-';
+        statusField.className = 'form-control';
         btn.disabled = true;
         return;
     }

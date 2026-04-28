@@ -5,7 +5,7 @@
 <h2 class="mb-4"><i class="bi bi-people"></i> Consultar Aldeeiro(s)</h2>
 
 <div class="card p-4 mb-4">
-    <form method="POST" action="/pesquisarAldeeiros">
+    <form method="POST" action="/pesquisarAldeeiros" id="formPesquisa">
         <div class="row g-3 align-items-end">
             <div class="col-12 col-md-4">
                 <label for="nome" class="form-label">Nome</label>
@@ -13,7 +13,7 @@
                        value="{{ filtro_nome|default('') }}">
             </div>
             <div class="col-8 col-md-3">
-                <label for="nucleo" class="form-label">Núcleo</label>
+                <label for="nucleo" class="form-label">Núcleo <span class="text-danger">*</span></label>
                 {% if not is_fundador and nucleo_usuario %}
                     <select class="form-select" id="nucleo" disabled>
                         {% for n in nucleos %}
@@ -24,8 +24,8 @@
                     </select>
                     <input type="hidden" name="nucleo" value="{{ nucleo_usuario }}">
                 {% else %}
-                    <select class="form-select" id="nucleo" name="nucleo">
-                        <option value="">Todos</option>
+                    <select class="form-select" id="nucleo" name="nucleo" required>
+                        <option value="">Selecione</option>
                         {% for n in nucleos %}
                             <option value="{{ n.id }}" {{ 'selected' if filtro_nucleo|default('') == n.id|string }}>{{ n.nome }}</option>
                         {% endfor %}
@@ -39,33 +39,51 @@
                 <a href="/aldeeiro/listar" class="btn btn-outline-secondary w-100"><i class="bi bi-x-circle"></i> Limpar Filtros</a>
             </div>
         </div>
+        <div class="row g-3 mt-2">
+            <div class="col-12 col-md-3">
+                <div class="form-check mt-4">
+                    <input class="form-check-input" type="checkbox" id="nunca_serviu" name="nunca_serviu" value="1"
+                           {{ 'checked' if filtro_nunca_serviu|default(false) }}>
+                    <label class="form-check-label" for="nunca_serviu">Nunca serviu em aldeia</label>
+                </div>
+            </div>
+        </div>
         <div class="row g-3 mt-1">
             <div class="col-12 col-md-4">
-                <label for="aldeias_fez" class="form-label">Aldeias que fez</label>
-                <select class="form-select" id="aldeias_fez" name="aldeias_fez" multiple size="4">
+                <label class="form-label">Aldeias que fez</label>
+                <div class="border rounded p-2" style="max-height:150px;overflow-y:auto;">
                     {% for a in aldeias|default([]) %}
-                        <option value="{{ a.id }}" {{ 'selected' if a.id|string in sel_aldeias_fez|default([]) }}>{{ a.nome_aldeia }}</option>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="aldeias_fez" value="{{ a.id }}" id="af_{{ a.id }}"
+                               {{ 'checked' if a.id|string in sel_aldeias_fez|default([]) }}>
+                        <label class="form-check-label" for="af_{{ a.id }}">{{ a.nome_aldeia }}</label>
+                    </div>
                     {% endfor %}
-                </select>
-                <small class="text-muted">Ctrl + clique para múltiplos</small>
+                </div>
             </div>
             <div class="col-12 col-md-4">
-                <label for="aldeias_serviu" class="form-label">Aldeias que serviu</label>
-                <select class="form-select" id="aldeias_serviu" name="aldeias_serviu" multiple size="4">
+                <label class="form-label">Aldeias que serviu</label>
+                <div class="border rounded p-2" style="max-height:150px;overflow-y:auto;">
                     {% for a in aldeias|default([]) %}
-                        <option value="{{ a.id }}" {{ 'selected' if a.id|string in sel_aldeias_serviu|default([]) }}>{{ a.nome_aldeia }}</option>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="aldeias_serviu" value="{{ a.id }}" id="as_{{ a.id }}"
+                               {{ 'checked' if a.id|string in sel_aldeias_serviu|default([]) }}>
+                        <label class="form-check-label" for="as_{{ a.id }}">{{ a.nome_aldeia }}</label>
+                    </div>
                     {% endfor %}
-                </select>
-                <small class="text-muted">Ctrl + clique para múltiplos</small>
+                </div>
             </div>
             <div class="col-12 col-md-4">
-                <label for="equipes" class="form-label">Equipes que serviu</label>
-                <select class="form-select" id="equipes" name="equipes" multiple size="4">
+                <label class="form-label">Equipes que serviu</label>
+                <div class="border rounded p-2" style="max-height:150px;overflow-y:auto;">
                     {% for e in equipes_lista|default([]) %}
-                        <option value="{{ e.id }}" {{ 'selected' if e.id|string in sel_equipes|default([]) }}>{{ e.nome }}</option>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="equipes" value="{{ e.id }}" id="eq_{{ e.id }}"
+                               {{ 'checked' if e.id|string in sel_equipes|default([]) }}>
+                        <label class="form-check-label" for="eq_{{ e.id }}">{{ e.nome }}</label>
+                    </div>
                     {% endfor %}
-                </select>
-                <small class="text-muted">Ctrl + clique para múltiplos</small>
+                </div>
             </div>
         </div>
     </form>
@@ -81,10 +99,10 @@
                     <th>Núcleo</th>
                     <th>Aldeeiro desde</th>
                     <th>Telefone</th>
-                    <th>Endereço</th>
                     <th>Aldeias que Fez</th>
                     <th>Aldeias que Serviu</th>
                     <th>Equipes</th>
+                    <th class="text-center">Detalhar</th>
                 </tr>
             </thead>
             <tbody>
@@ -94,7 +112,6 @@
                     <td>{{ a.nucleo }}</td>
                     <td>{{ a.aldeeiro_desde[:10].split('-')|reverse|join('/') if a.aldeeiro_desde else '' }}</td>
                     <td>{{ a.telefone }}</td>
-                    <td>{{ a.endereco|default('') }}</td>
                     <td>
                         {% for af in a.aldeias_fez %}
                             <span class="badge bg-success">{{ af }}</span>
@@ -110,6 +127,11 @@
                             <span class="badge bg-primary">{{ eq }}</span>
                         {% endfor %}
                     </td>
+                    <td class="text-center">
+                        <a href="/aldeeiro/detalhar/{{ a.cpf }}" class="btn btn-sm btn-outline-secondary" title="Detalhar">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -124,4 +146,18 @@
 
 {% block extra_js %}
 {{ paginacao_js() }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const nuncaServiu = document.getElementById('nunca_serviu');
+    function toggleServiuFiltros() {
+        const disabled = nuncaServiu.checked;
+        document.querySelectorAll('input[name="aldeias_serviu"], input[name="equipes"]').forEach(function(el) {
+            el.disabled = disabled;
+            if (disabled) el.checked = false;
+        });
+    }
+    nuncaServiu.addEventListener('change', toggleServiuFiltros);
+    toggleServiuFiltros();
+});
+</script>
 {% endblock %}

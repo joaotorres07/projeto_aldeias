@@ -63,13 +63,13 @@
                 <a class="nav-link text-light py-3 px-4" href="/formacao/presenca"><i class="bi bi-check2-square me-2"></i> Registrar Presença</a>
                 {% set perfil = session.get('perfil', []) %}
                 {% if 'Formador' in perfil or 'Fundador' in perfil %}
-                <a class="nav-link text-light py-3 px-4" href="/formacao/abrir"><i class="bi bi-journal-plus me-2"></i> Abrir Formação</a>
+                <a class="nav-link text-light py-3 px-4" href="/formacao/abrir"><i class="bi bi-journal-plus me-2"></i> Abrir / Fechar Formação</a>
                 {% endif %}
                 <a class="nav-link text-light py-3 px-4" href="/arquivos"><i class="bi bi-folder2-open me-2"></i> Arquivos e Informativos</a>
                 {% if 'Coordenador' in perfil or 'Fundador' in perfil %}
                 <a class="nav-link text-light py-3 px-4" href="/aldeeiro/listar"><i class="bi bi-people me-2"></i> Consultar Aldeeiro(s)</a>
                 {% endif %}
-                {% if 'Coordenador' in perfil or 'Usuário' in perfil or 'Fundador' in perfil %}
+                {% if 'Coordenador' in perfil or 'Usuário' in perfil or 'Fundador' in perfil or 'Colegiado' in perfil %}
                 <a class="nav-link text-light py-3 px-4" href="/relatorio/presenca"><i class="bi bi-clipboard-data me-2"></i> Relatório de Presença</a>
                 {% endif %}
                 {% if 'Coordenador' in perfil or 'Fundador' in perfil %}
@@ -93,13 +93,13 @@
                 <a class="nav-link" href="/formacao/presenca"><i class="bi bi-check2-square"></i> Registrar Presença</a>
                 {% set perfil = session.get('perfil', []) %}
                 {% if 'Formador' in perfil or 'Fundador' in perfil %}
-                <a class="nav-link" href="/formacao/abrir"><i class="bi bi-journal-plus"></i> Abrir Formação</a>
+                <a class="nav-link" href="/formacao/abrir"><i class="bi bi-journal-plus"></i> Abrir / Fechar Formação</a>
                 {% endif %}
                 <a class="nav-link" href="/arquivos"><i class="bi bi-folder2-open"></i> Arquivos e Informativos</a>
                 {% if 'Coordenador' in perfil or 'Fundador' in perfil %}
                 <a class="nav-link" href="/aldeeiro/listar"><i class="bi bi-people"></i> Consultar Aldeeiro(s)</a>
                 {% endif %}
-                {% if 'Coordenador' in perfil or 'Usuário' in perfil or 'Fundador' in perfil %}
+                {% if 'Coordenador' in perfil or 'Usuário' in perfil or 'Fundador' in perfil or 'Colegiado' in perfil %}
                 <a class="nav-link" href="/relatorio/presenca"><i class="bi bi-clipboard-data"></i> Relatório de Presença</a>
                 {% endif %}
                 {% if 'Coordenador' in perfil or 'Fundador' in perfil %}

@@ -69,12 +69,16 @@
         <span class="badge bg-primary fs-6 ms-2">{{ total_formacoes_nucleo }}</span>
     </div>
     <div class="card p-4">
+        <div class="mb-3 text-end">
+            <button type="button" class="btn btn-success btn-sm" onclick="exportarExcel()">
+                <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+            </button>
+        </div>
         <div class="table-responsive">
             <table class="table table-hover" id="tblRelPresenca" data-paginated>
                 <thead class="table-dark">
                     <tr>
                         <th>Nome</th>
-                        <th>Núcleo</th>
                         <th class="text-center">Formações Presentes</th>
                         <th>Última Presença</th>
                     </tr>
@@ -83,7 +87,6 @@
                     {% for r in resultados %}
                     <tr>
                         <td>{{ r.nome }}</td>
-                        <td>{{ r.nucleo }}</td>
                         <td class="text-center">
                             {% if r.total_formacoes > 0 %}
                                 <span class="badge bg-success fs-6">{{ r.total_formacoes }}</span>
@@ -118,6 +121,42 @@ function toggleMinPresenca() {
     const min = document.getElementById('min_presenca');
     min.disabled = check.checked;
     if (check.checked) min.value = '';
+}
+
+function exportarExcel() {
+    const headers = ["Nome", "Formações Presentes", "Última Presença"];
+    const rows = [];
+    document.querySelectorAll('#tblRelPresenca tbody tr').forEach(function(tr) {
+        const cells = tr.querySelectorAll('td');
+        rows.push([
+            cells[0].textContent.trim(),
+            cells[1].textContent.trim(),
+            cells[2].textContent.trim()
+        ]);
+    });
+
+    const nucleo = document.querySelector('#nucleo option:checked');
+    const titulo = "Relatorio_Presenca_" + (nucleo ? nucleo.textContent.trim().replace(/\s+/g, '_') : '') + "_{{ filtros.get('data_inicio', '')|default('', true) }}";
+
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/exportar/xlsx';
+
+    const hInput = document.createElement('input');
+    hInput.type = 'hidden'; hInput.name = 'headers'; hInput.value = JSON.stringify(headers);
+    form.appendChild(hInput);
+
+    const rInput = document.createElement('input');
+    rInput.type = 'hidden'; rInput.name = 'rows'; rInput.value = JSON.stringify(rows);
+    form.appendChild(rInput);
+
+    const tInput = document.createElement('input');
+    tInput.type = 'hidden'; tInput.name = 'titulo'; tInput.value = titulo;
+    form.appendChild(tInput);
+
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
 }
 </script>
 {{ paginacao_js() }}

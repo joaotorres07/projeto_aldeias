@@ -104,6 +104,7 @@ CREATE TABLE `tb_formacao` (
   `data_formacao` date DEFAULT NULL,
   `nucleo` int NOT NULL,
   `cpf_formador` varchar(20) DEFAULT NULL,
+  `ativo` tinyint(1) NOT NULL DEFAULT '1',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_formacao_nucleo_data` (`tema`,`nucleo`,`data_formacao`),
   KEY `fk_tb_formacao_nucleo` (`nucleo`),
