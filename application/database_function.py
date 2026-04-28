@@ -893,6 +893,9 @@ def select_aldeeiros_by(filtros):
                 if filtros.get("nucleo"):
                     sql += " AND n.id = %s"
                     params.append(filtros['nucleo'])
+                if filtros.get("sexo"):
+                    sql += " AND a.sexo = %s"
+                    params.append(filtros['sexo'])
 
             cursor.execute(sql, params)
             return cursor.fetchall()
@@ -932,7 +935,7 @@ def consultar_aldeias_db(id_aldeia=None, data_inicio=None, data_fim=None, id_nuc
                 FROM db_aldeias.tb_aldeeiro_aldeia_serviu aas
                 JOIN db_aldeias.tb_aldeia ad ON ad.id = aas.id_aldeia
                 LEFT JOIN db_aldeias.tb_nucleo n ON n.id = aas.id_nucleo
-                WHERE 1=1
+                WHERE aas.data_aldeia IS NOT NULL
             """
             params = []
             if id_aldeia:

@@ -266,11 +266,12 @@ def listar_aldeeiros():
 def pesquisar_aldeeeiros():
     nome = request.args.get("nome") or request.form.get("nome")
     nucleo = request.args.get("nucleo") or request.form.get("nucleo")
-
+    sexo = request.args.get("sexo") or request.form.get("sexo")
 
     filtros = {
         "nome": nome,
-        "nucleo": nucleo
+        "nucleo": nucleo,
+        "sexo": sexo
     }
 
     result = pesquisar_aldeeiros(filtros)
@@ -315,6 +316,7 @@ def pesquisar_aldeeeiros():
         filtro_nome=nome or '',
         filtro_nucleo=nucleo or '',
         filtro_nunca_serviu=nunca_serviu,
+        filtro_sexo=sexo or '',
         nucleo_usuario=None,
         is_fundador=True
     )
