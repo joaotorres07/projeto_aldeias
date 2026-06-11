@@ -6,3 +6,4 @@ requests
 Werkzeug
 Jinja2
 openpyxl
+reportlab

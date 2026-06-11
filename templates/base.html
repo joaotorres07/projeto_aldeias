@@ -61,6 +61,7 @@
                 <a class="nav-link text-light py-3 px-4" href="/informacoes"><i class="bi bi-info-circle me-2"></i> Informações Gerais</a>
                 <a class="nav-link text-light py-3 px-4" href="/aldeeiro/form"><i class="bi bi-person-fill-gear me-2"></i> Meu Cadastro</a>
                 <a class="nav-link text-light py-3 px-4" href="/formacao/presenca"><i class="bi bi-check2-square me-2"></i> Registrar Presença</a>
+                <a class="nav-link text-light py-3 px-4" href="/entrevista"><i class="bi bi-chat-left-text me-2"></i> Fazer Entrevista</a>
                 {% set perfil = session.get('perfil', []) %}
                 {% if 'Formador' in perfil or 'Fundador' in perfil %}
                 <a class="nav-link text-light py-3 px-4" href="/formacao/abrir"><i class="bi bi-journal-plus me-2"></i> Abrir / Fechar Formação</a>
@@ -91,6 +92,7 @@
                 <a class="nav-link" href="/informacoes"><i class="bi bi-info-circle"></i> Informações Gerais</a>
                 <a class="nav-link" href="/aldeeiro/form"><i class="bi bi-person-fill-gear"></i> Meu Cadastro</a>
                 <a class="nav-link" href="/formacao/presenca"><i class="bi bi-check2-square"></i> Registrar Presença</a>
+                <a class="nav-link" href="/entrevista"><i class="bi bi-chat-left-text"></i> Fazer Entrevista</a>
                 {% set perfil = session.get('perfil', []) %}
                 {% if 'Formador' in perfil or 'Fundador' in perfil %}
                 <a class="nav-link" href="/formacao/abrir"><i class="bi bi-journal-plus"></i> Abrir / Fechar Formação</a>

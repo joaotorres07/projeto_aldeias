@@ -1,0 +1,1426 @@
+{% extends "base.html" %}
+{% block title %}Fazer Entrevista{% endblock %}
+
+{% block extra_css %}
+<style>
+    .section-card { border-left: 4px solid #5a67d8; }
+    .section-title { color: #2d3748; font-weight: 700; font-size: 1.1rem; }
+    .form-label { font-weight: 500; font-size: 0.85rem; margin-bottom: 0.2rem; }
+    .form-text { font-size: 0.78rem; }
+    .form-check-inline { margin-right: 1rem; }
+    .disabled-section { opacity: 0.45; pointer-events: none; }
+    .hidden { display: none !important; }
+    #formEntrevista .form-control,
+    #formEntrevista .form-select { font-size: 0.85rem; padding: 0.3rem 0.6rem; height: auto; }
+    #formEntrevista textarea.form-control { padding: 0.35rem 0.6rem; }
+    #formEntrevista .form-check-label { font-size: 0.85rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-chat-left-text"></i> Fazer Entrevista</h2>
+
+<form method="POST" action="{{ url_for('finalizar_entrevista') }}" id="formEntrevista">
+
+    <!-- ============ CABEÇALHO DA ALDEIA ============ -->
+    <div class="card section-card mb-4 p-4">
+        <h5 class="section-title"><i class="bi bi-flag"></i> Dados da Aldeia</h5>
+        <div class="row g-3">
+            <div class="col-md-2">
+                <label class="form-label">Nº da Aldeia</label>
+                <input type="text" class="form-control" name="num_aldeia" placeholder="Ex: 20">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Tipo de Aldeia</label>
+                <select class="form-select" name="tipo_aldeia" id="tipo_aldeia">
+                    <option value="">Selecione</option>
+                    {% for a in aldeias %}
+                        <option value="{{ a.id }}" data-nome="{{ a.nome_aldeia }}">{{ a.nome_aldeia }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Núcleo</label>
+                <select class="form-select" name="nucleo_aldeia" id="nucleo_aldeia">
+                    <option value="">Selecione</option>
+                    {% for n in nucleos %}
+                        <option value="{{ n.id }}" data-nome="{{ n.nome }}">{{ n.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Datas da Aldeia</label>
+                <input type="text" class="form-control" name="datas_aldeia" placeholder="Ex: 01, 02 e 03 de Maio de 2026">
+            </div>
+            <!-- Hidden fields to send the text values -->
+            <input type="hidden" name="tipo_aldeia_nome" id="tipo_aldeia_nome">
+            <input type="hidden" name="nucleo_aldeia_nome" id="nucleo_aldeia_nome">
+        </div>
+    </div>
+
+    <!-- ============ DADOS PESSOAIS ============ -->
+    <div class="card section-card mb-4 p-4">
+        <h5 class="section-title"><i class="bi bi-person"></i> Dados Pessoais</h5>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label">Nome Completo *</label>
+                <input type="text" class="form-control" name="nome_completo" required>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Apelido</label>
+                <input type="text" class="form-control" name="apelido">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Sexo</label>
+                <div class="mt-1">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="sexo" value="F" id="sexoF">
+                        <label class="form-check-label" for="sexoF">F</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="sexo" value="M" id="sexoM">
+                        <label class="form-check-label" for="sexoM">M</label>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Data de Nascimento</label>
+                <input type="date" class="form-control" name="data_nascimento">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Idade</label>
+                <input type="number" class="form-control" name="idade" min="19">
+            </div>
+            <div class="col-md-7">
+                <label class="form-label">Endereço</label>
+                <input type="text" class="form-control" name="endereco">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Nº</label>
+                <input type="text" class="form-control" name="endereco_num">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Aptº</label>
+                <input type="text" class="form-control" name="endereco_apto">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Ponto de Referência</label>
+                <input type="text" class="form-control" name="ponto_referencia">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Bairro</label>
+                <input type="text" class="form-control" name="bairro">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Cidade</label>
+                <input type="text" class="form-control" name="cidade">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Estado</label>
+                <input type="text" class="form-control" name="estado">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">CEP</label>
+                <input type="text" class="form-control" name="cep">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Tipo Sanguíneo</label>
+                <input type="text" class="form-control" name="tipo_sanguineo">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Tel. Residencial</label>
+                <input type="text" class="form-control" name="tel_residencial">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Celular/WhatsApp</label>
+                <input type="text" class="form-control" name="celular_whatsapp">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Email</label>
+                <input type="email" class="form-control" name="email">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Profissão</label>
+                <input type="text" class="form-control" name="profissao">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Qual sua Religião?</label>
+                <input type="text" class="form-control" name="religiao">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Se católico, há quanto tempo não se confessa?</label>
+                <input type="text" class="form-control" name="tempo_confissao">
+            </div>
+            <div class="col-md-12">
+                <label class="form-label">Estado Civil</label>
+                <div class="d-flex flex-wrap gap-3 mt-1">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="estado_civil" value="solteiro" id="ecSolteiro">
+                        <label class="form-check-label" for="ecSolteiro">Solteiro(a)</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="estado_civil" value="casado" id="ecCasado">
+                        <label class="form-check-label" for="ecCasado">Casado(a)</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="estado_civil" value="divorciado" id="ecDivorciado">
+                        <label class="form-check-label" for="ecDivorciado">Divorciado(a)</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="estado_civil" value="amasiado" id="ecAmasiado">
+                        <label class="form-check-label" for="ecAmasiado">Amasiado(a)</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="estado_civil" value="viuvo" id="ecViuvo">
+                        <label class="form-check-label" for="ecViuvo">Viúvo(a)</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Campo Grávida - escondido se sexo = M -->
+            <div class="col-md-4" id="campo_gravida">
+                <label class="form-label">Está Grávida?</label>
+                <div class="mt-1">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="esta_gravida" value="sim" id="gravidaSim">
+                        <label class="form-check-label" for="gravidaSim">Sim</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="esta_gravida" value="nao" id="gravidaNao">
+                        <label class="form-check-label" for="gravidaNao">Não</label>
+                    </div>
+                </div>
+                <small class="form-text text-danger">Caso esteja grávida, aguarde uma próxima oportunidade.</small>
+            </div>
+            <div class="col-md-8">
+                <label class="form-label">Através de quem você está vindo para a aldeia?</label>
+                <input type="text" class="form-control" name="atraves_de_quem">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Você tem filhos?</label>
+                <div class="mt-1">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="tem_filhos" value="sim" id="filhosSim">
+                        <label class="form-check-label" for="filhosSim">Sim</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="tem_filhos" value="nao" id="filhosNao">
+                        <label class="form-check-label" for="filhosNao">Não</label>
+                    </div>
+                </div>
+            </div>
+            <!-- Campos filhos - desabilitados se tem_filhos = não -->
+            <div id="campos_filhos" class="col-md-9">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Quantos?</label>
+                        <input type="number" class="form-control" name="quantos_filhos" min="0">
+                    </div>
+                    <div class="col-md-9">
+                        <label class="form-label">Nome e idade dos filhos</label>
+                        <textarea class="form-control" name="nome_idade_filhos" rows="2"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ CÔNJUGE - desabilitado se solteiro/divorciado/viúvo ============ -->
+    <div class="card section-card mb-4 p-4" id="secao_conjuge">
+        <h5 class="section-title"><i class="bi bi-heart"></i> Cônjuge</h5>
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">É casado(a) há quanto tempo?</label>
+                <input type="text" class="form-control" name="tempo_casado">
+            </div>
+            <div class="col-md-8">
+                <label class="form-label">Nome do(a) seu Esposo(a)</label>
+                <input type="text" class="form-control" name="nome_esposo">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Religião do(a) cônjuge</label>
+                <input type="text" class="form-control" name="religiao_conjuge">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">O que ele(a) acha de você fazer a Aldeia de Vida?</label>
+                <input type="text" class="form-control" name="opiniao_conjuge">
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ PAIS ============ -->
+    <div class="card section-card mb-4 p-4">
+        <h5 class="section-title"><i class="bi bi-people"></i> Pais</h5>
+        <div class="row g-3">
+
+            <!-- Mora com pais - PRIMEIRO CAMPO -->
+            <div class="col-md-6">
+                <label class="form-label">Você vive com seus pais?</label>
+                <div class="mt-1">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="mora_com_pais" value="sim" id="moraSim">
+                        <label class="form-check-label" for="moraSim">Sim</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="mora_com_pais" value="nao" id="moraNao">
+                        <label class="form-check-label" for="moraNao">Não</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vivo com? - aparece quando mora_com_pais = sim -->
+            <div class="col-md-6 hidden" id="campo_vivo_com">
+                <label class="form-label">Vivo com?</label>
+                <div class="d-flex flex-wrap gap-3 mt-1">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="vivo_com" value="mae" id="vcMae">
+                        <label class="form-check-label" for="vcMae">Mãe</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="vivo_com" value="pai" id="vcPai">
+                        <label class="form-check-label" for="vcPai">Pai</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="vivo_com" value="ambos" id="vcAmbos">
+                        <label class="form-check-label" for="vcAmbos">Ambos</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PAI -->
+            <div class="col-md-8" id="campo_nome_pai">
+                <label class="form-label">Nome do Pai</label>
+                <input type="text" class="form-control" name="nome_pai" id="input_nome_pai">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Status</label>
+                <div class="mt-1">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="pai_status" value="vivo" id="paiVivo">
+                        <label class="form-check-label" for="paiVivo">Vivo</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="pai_status" value="falecido" id="paiFalecido">
+                        <label class="form-check-label" for="paiFalecido">Falecido</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="pai_status" value="sem_relacionamento" id="paiSemRelacao">
+                        <label class="form-check-label" for="paiSemRelacao">Sem relacionamento</label>
+                    </div>
+                </div>
+            </div>
+            <!-- Religião e Telefone do Pai - desabilitados se falecido -->
+            <div class="col-md-6" id="campo_religiao_pai">
+                <label class="form-label">Religião do Pai</label>
+                <input type="text" class="form-control" name="religiao_pai">
+            </div>
+            <div class="col-md-6" id="campo_telefone_pai">
+                <label class="form-label">Telefone do Pai</label>
+                <input type="text" class="form-control" name="telefone_pai" id="input_telefone_pai">
+            </div>
+
+            <!-- MÃE -->
+            <div class="col-md-8" id="campo_nome_mae">
+                <label class="form-label">Nome da Mãe</label>
+                <input type="text" class="form-control" name="nome_mae" id="input_nome_mae">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Status</label>
+                <div class="mt-1">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="mae_status" value="viva" id="maeViva">
+                        <label class="form-check-label" for="maeViva">Viva</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="mae_status" value="falecida" id="maeFalecida">
+                        <label class="form-check-label" for="maeFalecida">Falecida</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="mae_status" value="sem_relacionamento" id="maeSemRelacao">
+                        <label class="form-check-label" for="maeSemRelacao">Sem relacionamento</label>
+                    </div>
+                </div>
+            </div>
+            <!-- Religião e Telefone da Mãe - desabilitados se falecida -->
+            <div class="col-md-6" id="campo_religiao_mae">
+                <label class="form-label">Religião da Mãe</label>
+                <input type="text" class="form-control" name="religiao_mae">
+            </div>
+            <div class="col-md-6" id="campo_telefone_mae">
+                <label class="form-label">Telefone da Mãe</label>
+                <input type="text" class="form-control" name="telefone_mae" id="input_telefone_mae">
+            </div>
+
+            <!-- Pais casados - linha própria -->
+            <div class="col-md-6">
+                <label class="form-label">Seus pais são casados?</label>
+                <div class="d-flex flex-wrap gap-3 mt-1">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="pais_casados" value="sim" id="pcSim">
+                        <label class="form-check-label" for="pcSim">Sim</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="pais_casados" value="nao" id="pcNao">
+                        <label class="form-check-label" for="pcNao">Não</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="pais_casados" value="divorciados" id="pcDivorciados">
+                        <label class="form-check-label" for="pcDivorciados">Divorciados</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vivem juntos -->
+            <div class="col-md-6">
+                <label class="form-label">Vivem juntos?</label>
+                <div class="d-flex flex-wrap gap-3 mt-1">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="vivem_juntos" value="sim" id="vjSim">
+                        <label class="form-check-label" for="vjSim">Sim</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="vivem_juntos" value="nao" id="vjNao">
+                        <label class="form-check-label" for="vjNao">Não</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-12">
+                <small class="form-text text-muted">Se você NÃO mora com seus pais, coloque o endereço deles abaixo.</small>
+            </div>
+
+            <!-- Endereço conjunto dos pais (quando vivem juntos = sim) -->
+            <div id="endereco_pais_juntos" class="col-12 hidden">
+                <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
+                    <strong class="text-muted">Endereço dos Pais</strong>
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="btnEndPaisAldeeiro">
+                        <i class="bi bi-arrow-down-circle me-1"></i> Preencher com dados do Aldeeiro
+                    </button>
+                </div>
+                <div class="row g-3 mt-1">
+                    <div class="col-md-6">
+                        <label class="form-label">Endereço</label>
+                        <input type="text" class="form-control" name="endereco_pais" id="input_endereco_pais">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Nº</label>
+                        <input type="text" class="form-control" name="endereco_pais_num" id="input_endereco_pais_num">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Bairro</label>
+                        <input type="text" class="form-control" name="bairro_pais" id="input_bairro_pais">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Cidade</label>
+                        <input type="text" class="form-control" name="cidade_pais" id="input_cidade_pais">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Estado</label>
+                        <input type="text" class="form-control" name="estado_pais" id="input_estado_pais">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Endereço separado do Pai -->
+            <div id="endereco_pai_separado" class="col-12">
+                <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
+                    <strong class="text-muted">Endereço do Pai</strong>
+                    <button type="button" class="btn btn-sm btn-outline-primary btnEndParenteAldeeiro" data-target="pai">
+                        <i class="bi bi-arrow-down-circle me-1"></i> Preencher com dados do Aldeeiro
+                    </button>
+                </div>
+                <div class="row g-3 mt-1">
+                    <div class="col-md-6">
+                        <label class="form-label">Endereço</label>
+                        <input type="text" class="form-control" name="endereco_pai" id="input_endereco_pai">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Nº</label>
+                        <input type="text" class="form-control" name="endereco_pai_num" id="input_endereco_pai_num">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Bairro</label>
+                        <input type="text" class="form-control" name="bairro_pai" id="input_bairro_pai">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Cidade</label>
+                        <input type="text" class="form-control" name="cidade_pai" id="input_cidade_pai">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Estado</label>
+                        <input type="text" class="form-control" name="estado_pai" id="input_estado_pai">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Endereço separado da Mãe -->
+            <div id="endereco_mae_separado" class="col-12">
+                <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
+                    <strong class="text-muted">Endereço da Mãe</strong>
+                    <button type="button" class="btn btn-sm btn-outline-primary btnEndParenteAldeeiro" data-target="mae">
+                        <i class="bi bi-arrow-down-circle me-1"></i> Preencher com dados do Aldeeiro
+                    </button>
+                </div>
+                <div class="row g-3 mt-1">
+                    <div class="col-md-6">
+                        <label class="form-label">Endereço</label>
+                        <input type="text" class="form-control" name="endereco_mae" id="input_endereco_mae">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Nº</label>
+                        <input type="text" class="form-control" name="endereco_mae_num" id="input_endereco_mae_num">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Bairro</label>
+                        <input type="text" class="form-control" name="bairro_mae" id="input_bairro_mae">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Cidade</label>
+                        <input type="text" class="form-control" name="cidade_mae" id="input_cidade_mae">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Estado</label>
+                        <input type="text" class="form-control" name="estado_mae" id="input_estado_mae">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ OUTRAS INFORMAÇÕES IMPORTANTES ============ -->
+    <div class="card section-card mb-4 p-4">
+        <h5 class="section-title"><i class="bi bi-exclamation-triangle"></i> Outras Informações Importantes</h5>
+        <div class="row g-3">
+
+            <!-- Doença crônica -->
+            <div class="col-12">
+                <div class="row g-2 align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-label">Tem alguma doença crônica ou é alérgica?</label>
+                        <div class="mt-1">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="doenca_cronica" value="sim" id="doencaSim">
+                                <label class="form-check-label" for="doencaSim">Sim</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="doenca_cronica" value="nao" id="doencaNao">
+                                <label class="form-check-label" for="doencaNao">Não</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-8 hidden" id="campo_doenca_qual">
+                        <label class="form-label">A quê?</label>
+                        <input type="text" class="form-control" name="doenca_qual">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Faz tratamento -->
+            <div class="col-12">
+                <div class="row g-2 align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-label">Faz algum tratamento?</label>
+                        <div class="mt-1">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="faz_tratamento" value="sim" id="tratamentoSim">
+                                <label class="form-check-label" for="tratamentoSim">Sim</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="faz_tratamento" value="nao" id="tratamentoNao">
+                                <label class="form-check-label" for="tratamentoNao">Não</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-8 hidden" id="campo_tratamento_qual">
+                        <label class="form-label">Qual?</label>
+                        <input type="text" class="form-control" name="tratamento">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Toma remédio -->
+            <div class="col-12">
+                <div class="row g-2 align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-label">Você toma algum remédio regularmente?</label>
+                        <div class="mt-1">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="toma_remedio" value="sim" id="remedioSim">
+                                <label class="form-check-label" for="remedioSim">Sim</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="toma_remedio" value="nao" id="remedioNao">
+                                <label class="form-check-label" for="remedioNao">Não</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-8 hidden" id="campo_remedio_qual">
+                        <label class="form-label">Qual?</label>
+                        <input type="text" class="form-control" name="remedio">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Agressiva -->
+            <div class="col-12">
+                <label class="form-label">Você é uma pessoa agressiva?</label>
+                <div class="mt-1">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="agressiva" value="sim" id="agressivaSim">
+                        <label class="form-check-label" for="agressivaSim">Sim</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="agressiva" value="nao" id="agressivaNao">
+                        <label class="form-check-label" for="agressivaNao">Não</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Depressiva -->
+            <div class="col-12">
+                <label class="form-label">Você é depressiva?</label>
+                <div class="mt-1">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="depressiva" value="sim" id="depressivaSim">
+                        <label class="form-check-label" for="depressivaSim">Sim</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="depressiva" value="nao" id="depressivaNao">
+                        <label class="form-check-label" for="depressivaNao">Não</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Problema físico -->
+            <div class="col-12">
+                <label class="form-label">Você tem algum problema que lhe impeça de caminhar, correr, pular, subir morro etc.?</label>
+                <div class="mt-1">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="problema_fisico" value="sim" id="probFisicoSim">
+                        <label class="form-check-label" for="probFisicoSim">Sim</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="problema_fisico" value="nao" id="probFisicoNao">
+                        <label class="form-check-label" for="probFisicoNao">Não</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Acompanhamento psicológico -->
+            <div class="col-12">
+                <label class="form-label">Já fez algum acompanhamento psicológico?</label>
+                <div class="d-flex flex-wrap gap-3 mt-1">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="acompanhamento_psicologico" value="ja_fiz" id="psicoJaFiz">
+                        <label class="form-check-label" for="psicoJaFiz">Já Fiz</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="acompanhamento_psicologico" value="faco" id="psicoFaco">
+                        <label class="form-check-label" for="psicoFaco">Faço</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="acompanhamento_psicologico" value="nunca_fiz" id="psicoNunca">
+                        <label class="form-check-label" for="psicoNunca">Nunca fiz</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vício com drogas -->
+            <div class="col-12">
+                <label class="form-label">Você já teve ou tem algum vício com Drogas?</label>
+                <div class="mt-1">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="vicio_drogas" value="sim" id="drogasSim">
+                        <label class="form-check-label" for="drogasSim">Sim</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="vicio_drogas" value="nao" id="drogasNao">
+                        <label class="form-check-label" for="drogasNao">Não</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bebida alcoólica -->
+            <div class="col-12">
+                <div class="row g-2 align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-label">Você faz uso de bebida alcoólica?</label>
+                        <div class="mt-1">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="bebida_alcoolica" value="sim" id="bebidaSim">
+                                <label class="form-check-label" for="bebidaSim">Sim</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="bebida_alcoolica" value="nao" id="bebidaNao">
+                                <label class="form-check-label" for="bebidaNao">Não</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 hidden" id="campo_viciado_bebida">
+                        <label class="form-label">É viciado nesta bebida?</label>
+                        <div class="mt-1">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="viciado_bebida" value="sim" id="viciadoSim">
+                                <label class="form-check-label" for="viciadoSim">Sim</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="viciado_bebida" value="nao" id="viciadoNao">
+                                <label class="form-check-label" for="viciadoNao">Não</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fuma -->
+            <div class="col-12">
+                <div class="row g-2 align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-label">Você fuma?</label>
+                        <div class="mt-1">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="fuma" value="sim" id="fumaSim">
+                                <label class="form-check-label" for="fumaSim">Sim</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="fuma" value="nao" id="fumaNao">
+                                <label class="form-check-label" for="fumaNao">Não</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-8 hidden" id="campo_consegue_sem_fumar">
+                        <label class="form-label">Consegue ficar 3 dias sem fumar?</label>
+                        <div class="mt-1">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="consegue_sem_fumar" value="sim" id="fumarSim">
+                                <label class="form-check-label" for="fumarSim">Sim</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="consegue_sem_fumar" value="nao" id="fumarNao">
+                                <label class="form-check-label" for="fumarNao">Não</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Família fez aldeia -->
+            <div class="col-12">
+                <div class="row g-2 align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-label">Alguém de sua família já fez aldeia?</label>
+                        <div class="mt-1">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="familia_fez_aldeia" value="sim" id="famAldeiaSim">
+                                <label class="form-check-label" for="famAldeiaSim">Sim</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="familia_fez_aldeia" value="nao" id="famAldeiaNao">
+                                <label class="form-check-label" for="famAldeiaNao">Não</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-8 hidden" id="campo_familia_aldeia_quem">
+                        <label class="form-label">Quem?</label>
+                        <input type="text" class="form-control" name="familia_aldeia_quem">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Participante aldeia -->
+            <div class="col-12">
+                <div class="row g-2 align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-label">Algum parente, amigo(a), namorado(a), vai participar desta aldeia?</label>
+                        <div class="mt-1">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="participante_aldeia" value="sim" id="participanteSim">
+                                <label class="form-check-label" for="participanteSim">Sim</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="participante_aldeia" value="nao" id="participanteNao">
+                                <label class="form-check-label" for="participanteNao">Não</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-8 hidden" id="campo_participante_detalhe">
+                        <label class="form-label">Nome e grau de parentesco</label>
+                        <input type="text" class="form-control" name="participante_detalhe" placeholder="Ex: João - Irmão">
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 mt-3"><strong class="text-muted">Sacramentos</strong></div>
+            <div class="col-md-4">
+                <label class="form-label">Batizado(a)?</label>
+                <div class="mt-1">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="batizado" value="sim" id="batizadoSim">
+                        <label class="form-check-label" for="batizadoSim">Sim</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="batizado" value="nao" id="batizadoNao">
+                        <label class="form-check-label" for="batizadoNao">Não</label>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Fez a Primeira Comunhão?</label>
+                <div class="mt-1">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="primeira_comunhao" value="sim" id="comunhaoSim">
+                        <label class="form-check-label" for="comunhaoSim">Sim</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="primeira_comunhao" value="nao" id="comunhaoNao">
+                        <label class="form-check-label" for="comunhaoNao">Não</label>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Crismado(a)?</label>
+                <div class="mt-1">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="crismado" value="sim" id="crismadoSim">
+                        <label class="form-check-label" for="crismadoSim">Sim</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="crismado" value="nao" id="crismadoNao">
+                        <label class="form-check-label" for="crismadoNao">Não</label>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Se não fez, gostaria de fazer algum dos Sacramentos?</label>
+                <div class="mt-1">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="gostaria_sacramento" value="sim" id="sacramentoSim">
+                        <label class="form-check-label" for="sacramentoSim">Sim</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="gostaria_sacramento" value="nao" id="sacramentoNao">
+                        <label class="form-check-label" for="sacramentoNao">Não</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ PERGUNTAS PESSOAIS ============ -->
+    <div class="card section-card mb-4 p-4">
+        <h5 class="section-title"><i class="bi bi-chat-dots"></i> Perguntas Pessoais</h5>
+        <div class="row g-3">
+            <div class="col-12">
+                <label class="form-label">Quais são os seus maiores sonhos?</label>
+                <textarea class="form-control" name="maiores_sonhos" rows="2"></textarea>
+            </div>
+            <div class="col-12">
+                <label class="form-label">Qual é a pessoa com quem você melhor se relaciona?</label>
+                <textarea class="form-control" name="melhor_relaciona" rows="2"></textarea>
+            </div>
+            <div class="col-12">
+                <label class="form-label">Qual é a pessoa humana mais importante na sua vida hoje?</label>
+                <textarea class="form-control" name="pessoa_importante" rows="2"></textarea>
+            </div>
+            <div class="col-12">
+                <label class="form-label">Quais são hoje os seus maiores problemas?</label>
+                <textarea class="form-control" name="maiores_problemas" rows="2"></textarea>
+            </div>
+            <div class="col-12">
+                <label class="form-label">Qual é a pessoa com quem você tem maior dificuldade de relacionamento?</label>
+                <textarea class="form-control" name="dificuldade_relacionamento" rows="2"></textarea>
+            </div>
+            <div class="col-12">
+                <label class="form-label">Qual a origem dessa dificuldade?</label>
+                <textarea class="form-control" name="origem_dificuldade" rows="2"></textarea>
+            </div>
+            <div class="col-12">
+                <label class="form-label">Porque você deseja fazer a Aldeia de Aprofundamento?</label>
+                <textarea class="form-control" name="porque_aldeia" rows="3"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ INFORMAÇÃO ADICIONAL ============ -->
+    <div class="card section-card mb-4 p-4">
+        <h5 class="section-title"><i class="bi bi-info-lg"></i> Informação Adicional</h5>
+        <div class="row g-3">
+            <div class="col-12">
+                <label class="form-label">Você tem mais alguma informação importante sobre você, para que melhor possamos lhe ajudar?</label>
+                <textarea class="form-control" name="info_adicional" rows="3"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ EMERGÊNCIA ============ -->
+    <div class="card section-card mb-4 p-4">
+        <h5 class="section-title"><i class="bi bi-telephone"></i> Em Caso de Emergência, Quem Você Gostaria Que Chamasse?</h5>
+
+        <div class="d-flex align-items-center flex-wrap mb-2 gap-2">
+            <p class="text-muted fw-bold mb-0 me-2">Contato 1</p>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="btnPreencherPai1">
+                <i class="bi bi-arrow-down-circle me-1"></i> Preencher com dados do Pai
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="btnPreencherMae1">
+                <i class="bi bi-arrow-down-circle me-1"></i> Preencher com dados da Mãe
+            </button>
+        </div>
+        <div class="row g-3 mb-3">
+            <div class="col-md-4">
+                <label class="form-label">Nome</label>
+                <input type="text" class="form-control" name="emerg1_nome" id="emerg1_nome">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Telefone</label>
+                <input type="text" class="form-control" name="emerg1_telefone" id="emerg1_telefone">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Parentesco</label>
+                <input type="text" class="form-control" name="emerg1_parentesco" id="emerg1_parentesco">
+            </div>
+            <div class="col-md-5">
+                <label class="form-label">Endereço</label>
+                <input type="text" class="form-control" name="emerg1_endereco" id="emerg1_endereco">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">N.º</label>
+                <input type="text" class="form-control" name="emerg1_num" id="emerg1_num">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Bairro</label>
+                <input type="text" class="form-control" name="emerg1_bairro" id="emerg1_bairro">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Cidade</label>
+                <input type="text" class="form-control" name="emerg1_cidade" id="emerg1_cidade">
+            </div>
+        </div>
+
+        <hr>
+        <div class="d-flex align-items-center flex-wrap mb-2 gap-2">
+            <p class="text-muted fw-bold mb-0 me-2">Contato 2</p>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="btnPreencherPai2">
+                <i class="bi bi-arrow-down-circle me-1"></i> Preencher com dados do Pai
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="btnPreencherMae2">
+                <i class="bi bi-arrow-down-circle me-1"></i> Preencher com dados da Mãe
+            </button>
+        </div>
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Nome</label>
+                <input type="text" class="form-control" name="emerg2_nome" id="emerg2_nome">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Telefone</label>
+                <input type="text" class="form-control" name="emerg2_telefone" id="emerg2_telefone">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Parentesco</label>
+                <input type="text" class="form-control" name="emerg2_parentesco" id="emerg2_parentesco">
+            </div>
+            <div class="col-md-5">
+                <label class="form-label">Endereço</label>
+                <input type="text" class="form-control" name="emerg2_endereco" id="emerg2_endereco">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">N.º</label>
+                <input type="text" class="form-control" name="emerg2_num" id="emerg2_num">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Bairro</label>
+                <input type="text" class="form-control" name="emerg2_bairro" id="emerg2_bairro">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Cidade</label>
+                <input type="text" class="form-control" name="emerg2_cidade" id="emerg2_cidade">
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ CONTRIBUIÇÃO ============ -->
+    <div class="card section-card mb-4 p-4">
+        <h5 class="section-title"><i class="bi bi-cash-coin"></i> Contribuição</h5>
+        <p class="text-muted mb-3">Contribuição para alimentação, transporte e outras despesas durante a Aldeia.</p>
+        <div class="row g-3">
+
+            <!-- Irá fazer contribuição? -->
+            <div class="col-12">
+                <label class="form-label">Irá fazer contribuição?</label>
+                <div class="mt-1">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="ira_contribuir" value="sim" id="iraContribSim">
+                        <label class="form-check-label" for="iraContribSim">Sim</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="ira_contribuir" value="nao" id="iraContribNao">
+                        <label class="form-check-label" for="iraContribNao">Não</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bloco condicional: só aparece se ira_contribuir = sim -->
+            <div class="col-12 hidden" id="bloco_contribuicao">
+                <div class="row g-3">
+
+                    <!-- Contribuiu no dia da entrevista? -->
+                    <div class="col-12">
+                        <div class="row g-2 align-items-end">
+                            <div class="col-md-4">
+                                <label class="form-label">Contribuiu no dia da entrevista?</label>
+                                <div class="mt-1">
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="contribuiu_entrevista" value="sim" id="contribSim">
+                                        <label class="form-check-label" for="contribSim">Sim</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="contribuiu_entrevista" value="nao" id="contribNao">
+                                        <label class="form-check-label" for="contribNao">Não</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Valor: aparece se contribuiu = sim -->
+                            <div class="col-md-4 hidden" id="campo_valor_contribuicao">
+                                <label class="form-label">Qual valor? R$</label>
+                                <input type="text" class="form-control" name="valor_contribuicao">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Data futura + valor: aparece se contribuiu = não -->
+                    <div class="col-12 hidden" id="bloco_contribuicao_futura">
+                        <div class="row g-2 align-items-end">
+                            <div class="col-md-4">
+                                <label class="form-label">Vai contribuir até o dia</label>
+                                <input type="date" class="form-control" name="data_contribuicao_futura">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Qual valor? R$</label>
+                                <input type="text" class="form-control" name="valor_contribuicao_futura">
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ============ OBSERVAÇÕES DO ENTREVISTADOR ============ -->
+    <div class="card section-card mb-4 p-4" style="border-left-color: #e53e3e;">
+        <h5 class="section-title" style="color: #e53e3e;"><i class="bi bi-pencil-square"></i> Preenchimento Obrigatório pelo Entrevistador</h5>
+        <div class="row g-3">
+            <div class="col-12">
+                <label class="form-label">Observações</label>
+                <textarea class="form-control" name="observacoes_entrevistador" rows="5" placeholder="Observações sobre o entrevistado..."></textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ BOTÃO FINALIZAR ============ -->
+    <div class="text-center mb-5">
+        <button type="submit" class="btn btn-lg btn-primary px-5">
+            <i class="bi bi-file-earmark-pdf me-2"></i> Finalizar Entrevista e Gerar PDF
+        </button>
+    </div>
+
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+
+    // ===== Keepalive: renova a sessão a cada 5 minutos enquanto a página estiver aberta =====
+    var KEEPALIVE_INTERVAL = 5 * 60 * 1000; // 5 minutos
+    setInterval(function() {
+        fetch('{{ url_for("keepalive") }}', { method: 'GET', credentials: 'same-origin' })
+            .catch(function() { /* silencioso */ });
+    }, KEEPALIVE_INTERVAL);
+
+    // ===== Utilitários =====
+    function toggleSection(el, disabled) {
+        if (!el) return;
+        if (disabled) {
+            el.classList.add('disabled-section');
+        } else {
+            el.classList.remove('disabled-section');
+        }
+        el.querySelectorAll('input, textarea, select').forEach(function(inp) {
+            inp.disabled = disabled;
+        });
+    }
+
+    function toggleHidden(el, hide) {
+        if (!el) return;
+        if (hide) {
+            el.classList.add('hidden');
+        } else {
+            el.classList.remove('hidden');
+        }
+    }
+
+    function getRadioVal(name) {
+        var r = document.querySelector('input[name="' + name + '"]:checked');
+        return r ? r.value : '';
+    }
+
+    function val(id) {
+        var el = document.getElementById(id);
+        return el ? el.value : '';
+    }
+
+    // ===== Referências dos elementos =====
+    var campoGravida = document.getElementById('campo_gravida');
+    var secaoConjuge = document.getElementById('secao_conjuge');
+    var camposFilhos = document.getElementById('campos_filhos');
+    var campoReligiaoPai = document.getElementById('campo_religiao_pai');
+    var campoRelgiaoMae = document.getElementById('campo_religiao_mae');
+    var campoTelefonePai = document.getElementById('campo_telefone_pai');
+    var campoTelefoneMae = document.getElementById('campo_telefone_mae');
+    var campoNomePai = document.getElementById('campo_nome_pai');
+    var campoNomeMae = document.getElementById('campo_nome_mae');
+    var enderecoPaiSep = document.getElementById('endereco_pai_separado');
+    var enderecoMaeSep = document.getElementById('endereco_mae_separado');
+    var endPaisJuntos = document.getElementById('endereco_pais_juntos');
+    var campoVivoCom = document.getElementById('campo_vivo_com');
+
+    // Helper: limpar inputs/radios dentro de um container
+    function clearFields(container) {
+        if (!container) return;
+        container.querySelectorAll('input[type="text"], input[type="number"], input[type="email"], input[type="date"], textarea').forEach(function(inp) {
+            inp.value = '';
+        });
+        container.querySelectorAll('input[type="radio"], input[type="checkbox"]').forEach(function(inp) {
+            inp.checked = false;
+        });
+    }
+
+    // Helper: resetar campos dependentes da seção Pais
+    function resetCamposPaisDependentes() {
+        document.querySelectorAll('input[name="vivo_com"]').forEach(function(i) { i.checked = false; });
+        document.querySelectorAll('input[name="vivem_juntos"]').forEach(function(i) { i.checked = false; });
+        document.querySelectorAll('input[name="pais_casados"]').forEach(function(i) { i.checked = false; });
+        clearFields(endPaisJuntos);
+        clearFields(enderecoPaiSep);
+        clearFields(enderecoMaeSep);
+        toggleHidden(endPaisJuntos, true);
+        toggleHidden(enderecoPaiSep, false);
+        toggleHidden(enderecoMaeSep, false);
+        toggleSection(enderecoPaiSep, false);
+        toggleSection(enderecoMaeSep, false);
+        checkPaiStatus();
+        checkMaeStatus();
+    }
+
+    // ===== 1. Sexo → esconder "Está Grávida?" se masculino =====
+    document.querySelectorAll('input[name="sexo"]').forEach(function(r) {
+        r.addEventListener('change', function() {
+            toggleHidden(campoGravida, this.value === 'M');
+            if (this.value === 'M') {
+                document.querySelectorAll('input[name="esta_gravida"]').forEach(function(i) { i.checked = false; });
+            }
+        });
+    });
+
+    // ===== 2. Estado civil → desabilitar cônjuge se solteiro/divorciado/viúvo =====
+    function checkEstadoCivil() {
+        var v = getRadioVal('estado_civil');
+        var semConjuge = (v === 'solteiro' || v === 'divorciado' || v === 'viuvo');
+        toggleSection(secaoConjuge, semConjuge);
+    }
+    document.querySelectorAll('input[name="estado_civil"]').forEach(function(r) {
+        r.addEventListener('change', checkEstadoCivil);
+    });
+
+    // ===== 3. Tem filhos = não → desabilitar campos de filhos =====
+    function checkFilhos() {
+        var v = getRadioVal('tem_filhos');
+        toggleSection(camposFilhos, v === 'nao');
+    }
+    document.querySelectorAll('input[name="tem_filhos"]').forEach(function(r) {
+        r.addEventListener('change', checkFilhos);
+    });
+
+    // ===== 4. Mora com pais → mostrar "Vivo com?" e resetar ao trocar =====
+    function checkMoraComPais() {
+        var mora = getRadioVal('mora_com_pais');
+        toggleHidden(campoVivoCom, mora !== 'sim');
+        if (mora !== 'sim') {
+            document.querySelectorAll('input[name="vivo_com"]').forEach(function(i) { i.checked = false; });
+        }
+    }
+    document.querySelectorAll('input[name="mora_com_pais"]').forEach(function(r) {
+        r.addEventListener('change', function() {
+            resetCamposPaisDependentes();
+            checkMoraComPais();
+            checkVivemJuntos();
+        });
+    });
+
+    // ===== 5. Vivo com → resetar endereços e auto-marcar vivem_juntos =====
+    document.querySelectorAll('input[name="vivo_com"]').forEach(function(r) {
+        r.addEventListener('change', function() {
+            document.querySelectorAll('input[name="vivem_juntos"]').forEach(function(i) { i.checked = false; });
+            clearFields(endPaisJuntos);
+            clearFields(enderecoPaiSep);
+            clearFields(enderecoMaeSep);
+
+            if (this.value === 'ambos') {
+                document.getElementById('vjSim').checked = true;
+            } else {
+                document.getElementById('vjNao').checked = true;
+            }
+            checkVivemJuntos();
+        });
+    });
+
+    // ===== 6. Pai status → desabilitar campos conforme status =====
+    function checkPaiStatus() {
+        var status = getRadioVal('pai_status');
+        var vivoCom = getRadioVal('vivo_com');
+        var desabilitado = (status === 'falecido' || status === 'sem_relacionamento');
+        toggleSection(campoNomePai, status === 'sem_relacionamento');
+        toggleSection(campoReligiaoPai, desabilitado);
+        toggleSection(campoTelefonePai, desabilitado);
+        // Só desabilitar endereço se vivo_com != ambos
+        if (vivoCom !== 'ambos' && !enderecoPaiSep.classList.contains('hidden')) {
+            toggleSection(enderecoPaiSep, desabilitado);
+        }
+    }
+    document.querySelectorAll('input[name="pai_status"]').forEach(function(r) {
+        r.addEventListener('change', function() { checkPaiStatus(); checkVivemJuntos(); });
+    });
+
+    // ===== 7. Mãe status → desabilitar campos conforme status =====
+    function checkMaeStatus() {
+        var status = getRadioVal('mae_status');
+        var vivoCom = getRadioVal('vivo_com');
+        var desabilitado = (status === 'falecida' || status === 'sem_relacionamento');
+        toggleSection(campoNomeMae, status === 'sem_relacionamento');
+        toggleSection(campoRelgiaoMae, desabilitado);
+        toggleSection(campoTelefoneMae, desabilitado);
+        // Só desabilitar endereço se vivo_com != ambos
+        if (vivoCom !== 'ambos' && !enderecoMaeSep.classList.contains('hidden')) {
+            toggleSection(enderecoMaeSep, desabilitado);
+        }
+    }
+    document.querySelectorAll('input[name="mae_status"]').forEach(function(r) {
+        r.addEventListener('change', function() { checkMaeStatus(); checkVivemJuntos(); });
+    });
+
+    // ===== 8. Vivem juntos → endereço único ou separados =====
+    function checkVivemJuntos() {
+        var vj = getRadioVal('vivem_juntos');
+        var vivoCom = getRadioVal('vivo_com');
+        var paiStatus = getRadioVal('pai_status');
+        var maeStatus = getRadioVal('mae_status');
+        var paiDisponivel = (paiStatus !== 'falecido' && paiStatus !== 'sem_relacionamento');
+        var maeDisponivel = (maeStatus !== 'falecida' && maeStatus !== 'sem_relacionamento');
+
+        // Se vivo_com é ambos, sempre mostrar endereço conjunto
+        if (vj === 'sim' && (vivoCom === 'ambos' || (paiDisponivel && maeDisponivel))) {
+            toggleHidden(endPaisJuntos, false);
+            toggleSection(endPaisJuntos, false);
+            toggleHidden(enderecoPaiSep, true);
+            toggleHidden(enderecoMaeSep, true);
+        } else {
+            toggleHidden(endPaisJuntos, true);
+            toggleHidden(enderecoPaiSep, false);
+            toggleHidden(enderecoMaeSep, false);
+            checkPaiStatus();
+            checkMaeStatus();
+        }
+    }
+    document.querySelectorAll('input[name="vivem_juntos"]').forEach(function(r) {
+        r.addEventListener('change', checkVivemJuntos);
+    });
+
+    // ===== 9. Preencher endereço dos pais com dados do aldeeiro =====
+    function getDadosAldeeiro() {
+        return {
+            endereco: document.querySelector('input[name="endereco"]').value,
+            num: document.querySelector('input[name="endereco_num"]').value,
+            bairro: document.querySelector('input[name="bairro"]').value,
+            cidade: document.querySelector('input[name="cidade"]').value,
+            estado: document.querySelector('input[name="estado"]').value
+        };
+    }
+
+    function preencherEnderecoTarget(prefix, dados) {
+        document.getElementById('input_endereco_' + prefix).value = dados.endereco;
+        document.getElementById('input_endereco_' + prefix + '_num').value = dados.num;
+        document.getElementById('input_bairro_' + prefix).value = dados.bairro;
+        document.getElementById('input_cidade_' + prefix).value = dados.cidade;
+        var estEl = document.getElementById('input_estado_' + prefix);
+        if (estEl) estEl.value = dados.estado;
+    }
+
+    document.getElementById('btnEndPaisAldeeiro').addEventListener('click', function() {
+        preencherEnderecoTarget('pais', getDadosAldeeiro());
+    });
+
+    document.querySelectorAll('.btnEndParenteAldeeiro').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            preencherEnderecoTarget(this.getAttribute('data-target'), getDadosAldeeiro());
+        });
+    });
+
+    // ===== 10. Emergência → preencher com dados dos pais =====
+    function getDadosParente(tipo) {
+        var mora = getRadioVal('mora_com_pais');
+        var vivoCom = getRadioVal('vivo_com');
+        var vj = getRadioVal('vivem_juntos');
+        var paiVivo = getRadioVal('pai_status') !== 'falecido';
+        var maeViva = getRadioVal('mae_status') !== 'falecida';
+        var usaJuntos = (vj === 'sim' && paiVivo && maeViva);
+
+        var moraComEste = (mora === 'sim' && (vivoCom === 'ambos' || vivoCom === tipo));
+
+        var end;
+        if (moraComEste) {
+            end = {
+                endereco: document.querySelector('input[name="endereco"]').value,
+                num: document.querySelector('input[name="endereco_num"]').value,
+                bairro: document.querySelector('input[name="bairro"]').value,
+                cidade: document.querySelector('input[name="cidade"]').value
+            };
+        } else if (usaJuntos) {
+            end = {
+                endereco: val('input_endereco_pais'),
+                num: val('input_endereco_pais_num'),
+                bairro: val('input_bairro_pais'),
+                cidade: val('input_cidade_pais')
+            };
+        } else if (tipo === 'pai') {
+            end = {
+                endereco: val('input_endereco_pai'),
+                num: val('input_endereco_pai_num'),
+                bairro: val('input_bairro_pai'),
+                cidade: val('input_cidade_pai')
+            };
+        } else {
+            end = {
+                endereco: val('input_endereco_mae'),
+                num: val('input_endereco_mae_num'),
+                bairro: val('input_bairro_mae'),
+                cidade: val('input_cidade_mae')
+            };
+        }
+
+        return {
+            nome: tipo === 'pai' ? val('input_nome_pai') : val('input_nome_mae'),
+            telefone: tipo === 'pai' ? val('input_telefone_pai') : val('input_telefone_mae'),
+            parentesco: tipo === 'pai' ? 'Pai' : 'Mãe',
+            endereco: end.endereco,
+            num: end.num,
+            bairro: end.bairro,
+            cidade: end.cidade
+        };
+    }
+
+    function preencherEmergencia(prefix, dados) {
+        document.getElementById(prefix + '_nome').value = dados.nome;
+        document.getElementById(prefix + '_telefone').value = dados.telefone;
+        document.getElementById(prefix + '_parentesco').value = dados.parentesco;
+        document.getElementById(prefix + '_endereco').value = dados.endereco;
+        document.getElementById(prefix + '_num').value = dados.num;
+        document.getElementById(prefix + '_bairro').value = dados.bairro;
+        document.getElementById(prefix + '_cidade').value = dados.cidade;
+    }
+
+    document.getElementById('btnPreencherPai1').addEventListener('click', function() {
+        preencherEmergencia('emerg1', getDadosParente('pai'));
+    });
+    document.getElementById('btnPreencherMae1').addEventListener('click', function() {
+        preencherEmergencia('emerg1', getDadosParente('mae'));
+    });
+    document.getElementById('btnPreencherPai2').addEventListener('click', function() {
+        preencherEmergencia('emerg2', getDadosParente('pai'));
+    });
+    document.getElementById('btnPreencherMae2').addEventListener('click', function() {
+        preencherEmergencia('emerg2', getDadosParente('mae'));
+    });
+
+    // ===== 11. Campos condicionais: doença, tratamento, remédio, fuma =====
+    function setupCondicional(radioName, campoId) {
+        var campo = document.getElementById(campoId);
+        document.querySelectorAll('input[name="' + radioName + '"]').forEach(function(r) {
+            r.addEventListener('change', function() {
+                if (this.value === 'sim') {
+                    toggleHidden(campo, false);
+                } else {
+                    clearFields(campo);
+                    toggleHidden(campo, true);
+                }
+            });
+        });
+    }
+
+    setupCondicional('doenca_cronica', 'campo_doenca_qual');
+    setupCondicional('faz_tratamento', 'campo_tratamento_qual');
+    setupCondicional('toma_remedio', 'campo_remedio_qual');
+    setupCondicional('fuma', 'campo_consegue_sem_fumar');
+    setupCondicional('bebida_alcoolica', 'campo_viciado_bebida');
+    setupCondicional('familia_fez_aldeia', 'campo_familia_aldeia_quem');
+    setupCondicional('participante_aldeia', 'campo_participante_detalhe');
+
+    // ===== 12. Sync select text values to hidden fields =====
+    var tipoAldeiaSelect = document.getElementById('tipo_aldeia');
+    var nucleoAldeiaSelect = document.getElementById('nucleo_aldeia');
+    var tipoAldeiaHidden = document.getElementById('tipo_aldeia_nome');
+    var nucleoAldeiaHidden = document.getElementById('nucleo_aldeia_nome');
+
+    function syncSelectNames() {
+        var opt1 = tipoAldeiaSelect.options[tipoAldeiaSelect.selectedIndex];
+        tipoAldeiaHidden.value = opt1 && opt1.value ? opt1.getAttribute('data-nome') || opt1.text : '';
+        var opt2 = nucleoAldeiaSelect.options[nucleoAldeiaSelect.selectedIndex];
+        nucleoAldeiaHidden.value = opt2 && opt2.value ? opt2.getAttribute('data-nome') || opt2.text : '';
+    }
+
+    tipoAldeiaSelect.addEventListener('change', syncSelectNames);
+    nucleoAldeiaSelect.addEventListener('change', syncSelectNames);
+
+    document.getElementById('formEntrevista').addEventListener('submit', function() {
+        syncSelectNames();
+    });
+
+    // ===== 13. Contribuição condicional =====
+    var blocoContribuicao = document.getElementById('bloco_contribuicao');
+    var campoValorContrib = document.getElementById('campo_valor_contribuicao');
+    var blocoContribFutura = document.getElementById('bloco_contribuicao_futura');
+
+    // Irá contribuir? → mostrar/esconder bloco
+    document.querySelectorAll('input[name="ira_contribuir"]').forEach(function(r) {
+        r.addEventListener('change', function() {
+            if (this.value === 'sim') {
+                toggleHidden(blocoContribuicao, false);
+            } else {
+                // Limpar e esconder tudo
+                clearFields(blocoContribuicao);
+                toggleHidden(blocoContribuicao, true);
+                toggleHidden(campoValorContrib, true);
+                toggleHidden(blocoContribFutura, true);
+            }
+        });
+    });
+
+    // Contribuiu no dia? → mostrar valor ou data futura
+    document.querySelectorAll('input[name="contribuiu_entrevista"]').forEach(function(r) {
+        r.addEventListener('change', function() {
+            if (this.value === 'sim') {
+                toggleHidden(campoValorContrib, false);
+                clearFields(blocoContribFutura);
+                toggleHidden(blocoContribFutura, true);
+            } else {
+                clearFields(campoValorContrib);
+                toggleHidden(campoValorContrib, true);
+                toggleHidden(blocoContribFutura, false);
+            }
+        });
+    });
+
+});
+</script>
+{% endblock %}

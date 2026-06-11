@@ -13,6 +13,7 @@ from presenca_function import registrar_presenca as registrar_presenca_fn
 from whatsapp_function import enviar_whatsapp as enviar_whatsapp_fn
 from auth_functions import login as auth_login, cadastrar_usuario_fn as cadastrar_usuario, solicitar_recuperacao, confirmar_recuperacao
 from download_s3_function import gerar_url_download, listar_arquivos
+from entrevista_function import gerar_pdf_entrevista, gerar_pdf_ficha_visitacao
 
 from database_function import (
     get_aldeeiro_por_email, get_aldeeiro_relacoes, buscar_aldeeiro_por_cpf_db,
@@ -240,6 +241,52 @@ def salvar_atualizar_aldeeiro():
         status=status,
         message=message,
         status_code=status_code
+    )
+
+
+# ==================== ENTREVISTA ====================
+
+@application.route("/entrevista", methods=["GET"])
+@login_required
+def fazer_entrevista():
+    response = get_dados_aldeias()
+    dados_aldeias = json.loads(response["body"])
+    aldeias = dados_aldeias.get("aldeias_fez", [])
+    nucleos = get_nucleos()
+    return render_template("fazer_entrevista.html", aldeias=aldeias, nucleos=nucleos)
+
+
+@application.route("/entrevista/finalizar", methods=["POST"])
+@login_required
+def finalizar_entrevista():
+    import zipfile
+
+    dados = request.form.to_dict()
+
+    # Preencher dados do entrevistador automaticamente
+    dados['nome_entrevistador'] = session.get('usuario_nome', '')
+    dados['data_entrevista'] = datetime.utcnow().strftime('%Y-%m-%d')
+    aldeeiro = get_aldeeiro_por_email(session.get('usuario_email'))
+    dados['telefone_entrevistador'] = aldeeiro.get('telefone', '') if aldeeiro else ''
+
+    nome = dados.get('nome_completo', 'Entrevistado').replace(' ', '_')
+
+    # Gerar os dois PDFs
+    pdf_entrevista = gerar_pdf_entrevista(dados)
+    pdf_visitacao = gerar_pdf_ficha_visitacao(dados)
+
+    # Empacotar ambos em um ZIP
+    zip_buffer = BytesIO()
+    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr(f"Ficha_Entrevista_{nome}.pdf", pdf_entrevista.read())
+        zf.writestr(f"Ficha_Visitacao_{nome}.pdf", pdf_visitacao.read())
+    zip_buffer.seek(0)
+
+    return send_file(
+        zip_buffer,
+        download_name=f"Fichas_Entrevista_{nome}.zip",
+        as_attachment=True,
+        mimetype="application/zip"
     )
 
 
