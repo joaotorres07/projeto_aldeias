@@ -28,7 +28,7 @@ from database_function import (
     get_formacoes_ativas_hoje, encerrar_formacao_db
 )
 
-template_path = "C:/Users/joao-/Documents/GitHub/projeto_aldeias/templates"
+template_path = os.environ['TEMPLATES_DIR']
 static_path = os.path.join(os.path.dirname(template_path), "templates", "img")
 application = Flask(__name__, template_folder=template_path, static_folder=static_path, static_url_path='/img')
 application.secret_key = os.environ.get('SECRET_KEY', 'aldeias-secret-key-2026')
