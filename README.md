@@ -23,7 +23,14 @@ O sistema Aldeias de Vida é uma plataforma que ajuda no suporte e organização
   - RDS - Servidor de banco de dados que hospeda a base MySql.
   - SES - Serviço de envio de e-mails para notificações e comunicações com os usuários.
 
-## Enviroment Variables (Localhost)
+## Enviroment Localhost
+- **Observações:** 
+  - O sistema por padrão gera usuarios com o perfil de aldeeiros, para criar um usuário com perfil de organizador, é necessário acessar o banco de dados e adicionar outros perfis ao usuário para acessar outras funções.
+  - O sistema é configurado para rodar localmente utilizando o MySql como banco de dados, e as variáveis de ambiente são definidas para facilitar a configuração do ambiente de desenvolvimento.
+  - A variável `TEMPLATES_DIR` é utilizada para definir o diretório onde os templates do sistema estão localizados, portanto adicione o seu diretório local como valor.
+  - As credenciais de acesso ao banco e serviços AWS reais devem ser solicitadas a coordenação do movimento, caso seja necessário algum teste real no ambiente local.
+
+### Variáveis de ambiente para configuração local do sistema Aldeias de Vida
 ```
 AWS_ACCESS_KEY_ID=;AWS_REGION=;DB_HOST=localhost;DB_NAME=db_aldeias;DB_PASSWORD=root;DB_USER=root;S3_BUCKET_NAME=;AWS_SECRET_ACCESS_KEY=;TEMPLATES_DIR=/default/
 ```
