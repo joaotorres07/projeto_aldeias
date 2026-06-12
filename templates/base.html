@@ -25,8 +25,12 @@
             .content-area { padding: 15px 10px; }
             h2 { font-size: 1.4rem; }
             .card { padding: 1rem !important; }
-            .table { font-size: 0.85rem; }
+            .table { font-size: 0.82rem; }
+            .table th, .table td { white-space: nowrap; padding: 0.4rem 0.5rem; }
+            .table td .badge { font-size: 0.7rem; margin-bottom: 2px; }
+            .table-responsive { -webkit-overflow-scrolling: touch; }
             .duo-selecionados, .form-select[multiple] { font-size: 0.85rem; }
+            .pagination { flex-wrap: wrap; }
         }
     </style>
     {% block extra_css %}{% endblock %}

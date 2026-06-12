@@ -67,7 +67,7 @@
                     <tr>
                         <th>Aldeia</th>
                         <th>Data</th>
-                        <th>Núcleo</th>
+                        <th class="d-none d-md-table-cell">Núcleo</th>
                         <th class="text-center">Detalhes</th>
                     </tr>
                 </thead>
@@ -76,7 +76,7 @@
                     <tr>
                         <td>{{ r.nome_aldeia }}</td>
                         <td>{{ r.data_aldeia.strftime('%d/%m/%Y') if r.data_aldeia else 'Não informada' }}</td>
-                        <td>{{ r.nome_nucleo or 'Não informado' }}</td>
+                        <td class="d-none d-md-table-cell">{{ r.nome_nucleo or 'Não informado' }}</td>
                         <td class="text-center">
                             <a href="/aldeia/serventes?id_aldeia={{ r.id_aldeia }}&data_aldeia={{ r.data_aldeia.strftime('%Y-%m-%d') if r.data_aldeia else '' }}&id_nucleo={{ r.id_nucleo or '' }}&nome_aldeia={{ r.nome_aldeia }}&nome_nucleo={{ r.nome_nucleo or '' }}"
                                class="btn btn-sm btn-outline-primary" title="Ver serventes">

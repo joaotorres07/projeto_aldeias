@@ -1,10 +1,27 @@
 {% extends "base.html" %}
 {% block title %}Detalhar Aldeeiro - Aldeias{% endblock %}
+
+{% block extra_css %}
+<style>
+    @media (max-width: 767.98px) {
+        .detalhe-field .form-control {
+            font-size: 0.85rem;
+            text-overflow: ellipsis;
+            overflow: hidden;
+        }
+        .detalhe-field .form-label {
+            font-size: 0.8rem;
+            margin-bottom: 0.15rem;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <h2 class="mb-4"><i class="bi bi-eye"></i> Detalhar Aldeeiro</h2>
 
 <div class="card p-4">
-    <div class="row g-3">
+    <div class="row g-3 detalhe-field">
         <div class="col-12 col-md-6">
             <label class="form-label">Nome Completo</label>
             <input type="text" class="form-control" disabled value="{{ aldeeiro.nome }}">
@@ -15,9 +32,9 @@
                    value="{{ '%s.%s.%s-%s' % (aldeeiro.cpf[:3], aldeeiro.cpf[3:6], aldeeiro.cpf[6:9], aldeeiro.cpf[9:]) if aldeeiro.cpf and aldeeiro.cpf|length >= 11 else aldeeiro.cpf }}">
         </div>
         <div class="col-6 col-md-3">
-            <label class="form-label">Data de Nascimento</label>
-            <input type="date" class="form-control" disabled
-                   value="{{ aldeeiro.data_nascimento.strftime('%Y-%m-%d') if aldeeiro.data_nascimento else '' }}">
+            <label class="form-label">Data Nasc.</label>
+            <input type="text" class="form-control" disabled
+                   value="{{ aldeeiro.data_nascimento.strftime('%d/%m/%Y') if aldeeiro.data_nascimento else '' }}">
         </div>
         <div class="col-4 col-md-2">
             <label class="form-label">Sexo</label>
@@ -45,7 +62,7 @@
             <input type="text" class="form-control" disabled value="{{ aldeeiro.logradouro or '' }}">
         </div>
         <div class="col-4 col-md-1">
-            <label class="form-label">Número</label>
+            <label class="form-label">Nº</label>
             <input type="text" class="form-control" disabled value="{{ aldeeiro.numero or '' }}">
         </div>
         <div class="col-8 col-md-3">
@@ -70,16 +87,20 @@
         <div class="col-12">
             {% if aldeeiro_aldeias_fez %}
             <div class="table-responsive">
-                <table class="table table-sm table-bordered">
+                <table class="table table-sm table-bordered mb-0">
                     <thead class="table-light">
-                        <tr><th>Aldeia</th><th>Data</th><th>Núcleo</th></tr>
+                        <tr>
+                            <th>Aldeia</th>
+                            <th>Data</th>
+                            <th class="d-none d-md-table-cell">Núcleo</th>
+                        </tr>
                     </thead>
                     <tbody>
                         {% for item in aldeeiro_aldeias_fez %}
                         <tr>
                             <td>{% for a in aldeias_fez %}{% if a.id == item.id_aldeia %}{{ a.nome_aldeia }}{% endif %}{% endfor %}</td>
                             <td>{{ item.data_aldeia[:10].split('-')|reverse|join('/') if item.data_aldeia else '' }}</td>
-                            <td>{% for n in nucleos %}{% if n.id == item.id_nucleo %}{{ n.nome }}{% endif %}{% endfor %}</td>
+                            <td class="d-none d-md-table-cell">{% for n in nucleos %}{% if n.id == item.id_nucleo %}{{ n.nome }}{% endif %}{% endfor %}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -105,17 +126,22 @@
         <div class="col-12">
             {% if aldeeiro_aldeias_serviu %}
             <div class="table-responsive">
-                <table class="table table-sm table-bordered">
+                <table class="table table-sm table-bordered mb-0">
                     <thead class="table-light">
-                        <tr><th>Aldeia</th><th>Data</th><th>Equipe</th><th>Núcleo</th></tr>
+                        <tr>
+                            <th>Aldeia</th>
+                            <th class="d-none d-md-table-cell">Data</th>
+                            <th>Equipe</th>
+                            <th class="d-none d-md-table-cell">Núcleo</th>
+                        </tr>
                     </thead>
                     <tbody>
                         {% for item in aldeeiro_aldeias_serviu %}
                         <tr>
                             <td>{% for a in aldeias_fez %}{% if a.id == item.id_aldeia %}{{ a.nome_aldeia }}{% endif %}{% endfor %}</td>
-                            <td>{{ item.data_aldeia[:10].split('-')|reverse|join('/') if item.data_aldeia else '' }}</td>
+                            <td class="d-none d-md-table-cell">{{ item.data_aldeia[:10].split('-')|reverse|join('/') if item.data_aldeia else '' }}</td>
                             <td>{% for e in equipes %}{% if e.id == item.id_equipe %}{{ e.nome }}{% endif %}{% endfor %}</td>
-                            <td>{% for n in nucleos %}{% if n.id == item.id_nucleo %}{{ n.nome }}{% endif %}{% endfor %}</td>
+                            <td class="d-none d-md-table-cell">{% for n in nucleos %}{% if n.id == item.id_nucleo %}{{ n.nome }}{% endif %}{% endfor %}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -133,4 +159,3 @@
     </div>
 </div>
 {% endblock %}
-

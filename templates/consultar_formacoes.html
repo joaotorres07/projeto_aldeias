@@ -58,8 +58,8 @@
                     <tr>
                         <th>Data</th>
                         <th>Tema</th>
-                        <th>Núcleo</th>
-                        <th>Formador</th>
+                        <th class="d-none d-md-table-cell">Núcleo</th>
+                        <th class="d-none d-md-table-cell">Formador</th>
                         <th class="text-center">Presentes</th>
                     </tr>
                 </thead>
@@ -68,8 +68,8 @@
                     <tr>
                         <td>{{ f.data_formacao.strftime('%d/%m/%Y') if f.data_formacao else '' }}</td>
                         <td>{{ f.tema }}</td>
-                        <td>{{ f.nucleo }}</td>
-                        <td>{{ f.formador }}</td>
+                        <td class="d-none d-md-table-cell">{{ f.nucleo }}</td>
+                        <td class="d-none d-md-table-cell">{{ f.formador }}</td>
                         <td class="text-center">
                             <a href="/formacao/{{ f.id }}/presentes" class="btn btn-sm btn-outline-primary" title="Ver presentes">
                                 <i class="bi bi-people"></i>

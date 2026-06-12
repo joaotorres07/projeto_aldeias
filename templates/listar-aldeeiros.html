@@ -104,12 +104,12 @@
             <thead class="table-dark">
                 <tr>
                     <th>Nome</th>
-                    <th>Núcleo</th>
-                    <th>Aldeeiro desde</th>
-                    <th>Telefone</th>
-                    <th>Aldeias que Fez</th>
-                    <th>Aldeias que Serviu</th>
-                    <th>Equipes</th>
+                    <th class="d-none d-lg-table-cell">Núcleo</th>
+                    <th class="d-none d-lg-table-cell">Aldeeiro desde</th>
+                    <th class="d-none d-md-table-cell">Telefone</th>
+                    <th class="d-none d-md-table-cell">Aldeias que Fez</th>
+                    <th class="d-none d-md-table-cell">Aldeias que Serviu</th>
+                    <th class="d-none d-lg-table-cell">Equipes</th>
                     <th class="text-center">Detalhar</th>
                 </tr>
             </thead>
@@ -117,20 +117,20 @@
                 {% for a in aldeeiros %}
                 <tr>
                     <td>{{ a.nome_aldeeiro }}</td>
-                    <td>{{ a.nucleo }}</td>
-                    <td>{{ a.aldeeiro_desde[:10].split('-')|reverse|join('/') if a.aldeeiro_desde else '' }}</td>
-                    <td>{{ a.telefone }}</td>
-                    <td>
+                    <td class="d-none d-lg-table-cell">{{ a.nucleo }}</td>
+                    <td class="d-none d-lg-table-cell">{{ a.aldeeiro_desde[:10].split('-')|reverse|join('/') if a.aldeeiro_desde else '' }}</td>
+                    <td class="d-none d-md-table-cell">{{ a.telefone }}</td>
+                    <td class="d-none d-md-table-cell">
                         {% for af in a.aldeias_fez %}
                             <span class="badge bg-success">{{ af }}</span>
                         {% endfor %}
                     </td>
-                    <td>
+                    <td class="d-none d-md-table-cell">
                         {% for asv in a.aldeias_serviu %}
                             <span class="badge bg-info">{{ asv }}</span>
                         {% endfor %}
                     </td>
-                    <td>
+                    <td class="d-none d-lg-table-cell">
                         {% for eq in a.equipes %}
                             <span class="badge bg-primary">{{ eq }}</span>
                         {% endfor %}

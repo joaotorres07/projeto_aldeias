@@ -378,7 +378,7 @@ def get_presentes_por_formacao(id_formacao):
                 FROM db_aldeias.tb_frequencia_aldeeiro fa
                 JOIN db_aldeias.tb_aldeeiro a ON a.cpf = fa.cpf_aldeeiro
                 WHERE fa.id_formacao = %s
-                ORDER BY a.nome
+                ORDER BY a.nome COLLATE utf8mb4_unicode_ci
             """, (id_formacao,))
             return cursor.fetchall()
     except Exception:
@@ -742,7 +742,6 @@ def inserir_atualizar_aldeeiro(body):
 
         cpf = body["cpf"]
         import json as _json
-        # aldeias_fez comes as JSON string
         aldeias_fez_json = body.get("aldeias_fez_json")
         if isinstance(aldeias_fez_json, list):
             aldeias_fez_json = aldeias_fez_json[0] if aldeias_fez_json else '[]'
@@ -897,6 +896,7 @@ def select_aldeeiros_by(filtros):
                     sql += " AND a.sexo = %s"
                     params.append(filtros['sexo'])
 
+            sql += " ORDER BY a.nome"
             cursor.execute(sql, params)
             return cursor.fetchall()
     except Exception as e:
@@ -980,7 +980,7 @@ def get_serventes_aldeia(id_aldeia, data_aldeia, id_nucleo):
             if id_nucleo:
                 sql += " AND aas.id_nucleo = %s"
                 params.append(id_nucleo)
-            sql += " ORDER BY a.nome"
+            sql += " ORDER BY e.nome, a.nome"
             cursor.execute(sql, params)
             return cursor.fetchall()
     except Exception as e:
