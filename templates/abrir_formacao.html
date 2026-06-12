@@ -55,12 +55,16 @@
                     <td>{{ f.nome_nucleo }}</td>
                     <td>{{ f.formador }}</td>
                     <td class="text-center">
+                        {% if is_fundador or f.cpf_formador == cpf_logado %}
                         <form method="POST" action="/formacao/encerrar/{{ f.id }}" style="display:inline;"
                               onsubmit="return confirm('Tem certeza que deseja encerrar esta formação? Novas presenças não poderão ser registradas.')">
                             <button type="submit" class="btn btn-sm btn-danger">
                                 <i class="bi bi-x-circle"></i> Encerrar
                             </button>
                         </form>
+                        {% else %}
+                        <span class="text-muted small"><i class="bi bi-lock"></i> Aberta por outro formador</span>
+                        {% endif %}
                     </td>
                 </tr>
                 {% endfor %}

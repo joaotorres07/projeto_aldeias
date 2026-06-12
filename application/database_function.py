@@ -277,7 +277,8 @@ def get_formacoes_ativas_hoje(nucleo_id=None):
         connection = get_db_connection()
         with connection.cursor() as cursor:
             sql = """
-                SELECT f.id, f.tema, f.data_formacao, f.nucleo, n.nome AS nome_nucleo,
+                SELECT f.id, f.tema, f.data_formacao, f.nucleo, f.cpf_formador,
+                       n.nome AS nome_nucleo,
                        COALESCE(a.nome, 'Não informado') AS formador
                 FROM db_aldeias.tb_formacao f
                 JOIN db_aldeias.tb_nucleo n ON n.id = f.nucleo
@@ -299,16 +300,19 @@ def get_formacoes_ativas_hoje(nucleo_id=None):
             connection.close()
 
 
-def encerrar_formacao_db(id_formacao):
-    """Encerra uma formação setando ativo = 0, somente se for do dia atual."""
+def encerrar_formacao_db(id_formacao, cpf_formador=None):
+    """Encerra uma formação setando ativo = 0, somente se for do dia atual.
+       Se cpf_formador for informado, só encerra se o formador for o mesmo que abriu."""
     connection = None
     try:
         connection = get_db_connection()
         with connection.cursor() as cursor:
-            cursor.execute(
-                "UPDATE db_aldeias.tb_formacao SET ativo = 0 WHERE id = %s AND data_formacao = CURDATE()",
-                (id_formacao,)
-            )
+            sql = "UPDATE db_aldeias.tb_formacao SET ativo = 0 WHERE id = %s AND data_formacao = CURDATE()"
+            params = [id_formacao]
+            if cpf_formador:
+                sql += " AND cpf_formador = %s"
+                params.append(cpf_formador)
+            cursor.execute(sql, params)
             affected = cursor.rowcount
         connection.commit()
         return affected > 0

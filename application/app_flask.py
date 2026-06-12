@@ -424,12 +424,15 @@ def abrir_formacao():
 
     nucleos = get_nucleos_ativos()
     formacoes_ativas = get_formacoes_ativas_hoje(nucleo_usuario if not is_fundador else None)
+    aldeeiro = get_aldeeiro_por_email(session.get('usuario_email'))
+    cpf_logado = aldeeiro['cpf'] if aldeeiro else None
     return render_template(
         "abrir_formacao.html",
         nucleos=nucleos,
         nucleo_usuario=nucleo_usuario,
         is_fundador=is_fundador,
-        formacoes_ativas=formacoes_ativas
+        formacoes_ativas=formacoes_ativas,
+        cpf_logado=cpf_logado
     )
 
 
@@ -438,11 +441,22 @@ def abrir_formacao():
 @perfil_required('Formador', 'Fundador')
 def encerrar_formacao(id_formacao):
     try:
-        sucesso = encerrar_formacao_db(id_formacao)
+        perfis = session.get('perfil', [])
+        is_fundador = 'Fundador' in perfis
+
+        cpf_formador = None
+        if not is_fundador:
+            aldeeiro = get_aldeeiro_por_email(session.get('usuario_email'))
+            cpf_formador = aldeeiro['cpf'] if aldeeiro else None
+
+        sucesso = encerrar_formacao_db(id_formacao, cpf_formador)
         if sucesso:
             flash("Formação encerrada com sucesso!", "success")
         else:
-            flash("Não foi possível encerrar a formação. Verifique se ela é do dia de hoje.", "error")
+            if not is_fundador:
+                flash("Não foi possível encerrar a formação. Somente o formador que abriu pode encerrá-la.", "error")
+            else:
+                flash("Não foi possível encerrar a formação. Verifique se ela é do dia de hoje.", "error")
     except Exception as e:
         flash(f"Erro ao encerrar formação: {str(e)}", "error")
     return redirect(url_for('abrir_formacao'))
