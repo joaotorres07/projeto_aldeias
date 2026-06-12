@@ -1,0 +1,542 @@
+{% extends "base.html" %}
+{% block title %}Organizar Cabanas - Aldeias{% endblock %}
+{% block extra_css %}
+<style>
+    .tribo-card { border-left: 4px solid; border-radius: 10px; }
+    .tribo-1 { border-left-color: #e53e3e; }
+    .tribo-2 { border-left-color: #dd6b20; }
+    .tribo-3 { border-left-color: #38a169; }
+    .tribo-4 { border-left-color: #3182ce; }
+    .cabana-header { font-weight: 600; font-size: 0.95rem; }
+    .cabana-table th { font-size: 0.8rem; }
+    .cabana-table td { font-size: 0.85rem; }
+    .badge-masc { background-color: #3182ce; }
+    .badge-fem { background-color: #d53f8c; }
+    .tribo-title { font-weight: 700; font-size: 1.1rem; }
+    .btn-remover { padding: 0 6px; font-size: 0.75rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-house-door"></i> Organizar Cabanas</h2>
+
+<!-- Formulário de adição -->
+<div class="card p-4 mb-4">
+    <div class="row g-3 align-items-end">
+        <div class="col-12 col-md-3">
+            <label for="tipo_aldeia" class="form-label">Tipo de Aldeia <span class="text-danger">*</span></label>
+            <select class="form-select" id="tipo_aldeia" required>
+                <option value="">Selecione...</option>
+                {% for a in aldeias %}
+                <option value="{{ a.id }}">{{ a.nome_aldeia }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-12 col-md-3">
+            <label for="nome_completo" class="form-label">Nome Completo <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="nome_completo" placeholder="Nome completo" required disabled>
+        </div>
+        <div class="col-6 col-md-2">
+            <label for="sexo" class="form-label">Sexo <span class="text-danger">*</span></label>
+            <select class="form-select" id="sexo" required disabled>
+                <option value="">Selecione...</option>
+                <option value="M">Masculino</option>
+                <option value="F">Feminino</option>
+            </select>
+        </div>
+        <div class="col-6 col-md-2">
+            <label for="idade" class="form-label">Idade <span class="text-danger">*</span></label>
+            <input type="number" class="form-control" id="idade" min="1" max="120" placeholder="Idade" required disabled>
+        </div>
+        <div class="col-12 col-md-2">
+            <button type="button" class="btn btn-primary w-100" id="btnAdicionar" disabled>
+                <i class="bi bi-plus-circle"></i> Adicionar
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Alerta de erro -->
+<div class="alert alert-danger alert-dismissible fade d-none" id="alertErro" role="alert">
+    <span id="alertErroMsg"></span>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+
+<!-- Painel das Tribos -->
+<div class="row g-4" id="painelTribos">
+    <!-- Tribo 1 -->
+    <div class="col-12 col-lg-6">
+        <div class="card tribo-card tribo-1 p-3">
+            <div class="tribo-title mb-3"><i class="bi bi-flag-fill text-danger"></i> Tribo 1 <small class="text-muted fw-normal">(19 a 25 anos)</small></div>
+            <!-- Cabana 1 - Masculino -->
+            <div class="mb-3">
+                <div class="cabana-header"><i class="bi bi-house-fill"></i> Cabana 1 <span class="badge badge-masc">Masculino</span> <span class="badge bg-secondary" id="countCabana1">0</span></div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover cabana-table mt-1 mb-0">
+                        <thead class="table-light"><tr><th>Cód</th><th>Nome</th><th>Idade</th><th></th></tr></thead>
+                        <tbody id="cabana1"></tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- Cabana 5 - Feminino -->
+            <div>
+                <div class="cabana-header"><i class="bi bi-house-fill"></i> Cabana 5 <span class="badge badge-fem">Feminino</span> <span class="badge bg-secondary" id="countCabana5">0</span></div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover cabana-table mt-1 mb-0">
+                        <thead class="table-light"><tr><th>Cód</th><th>Nome</th><th>Idade</th><th></th></tr></thead>
+                        <tbody id="cabana5"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tribo 2 -->
+    <div class="col-12 col-lg-6">
+        <div class="card tribo-card tribo-2 p-3">
+            <div class="tribo-title mb-3"><i class="bi bi-flag-fill text-warning"></i> Tribo 2 <small class="text-muted fw-normal">(25 a 34 anos)</small></div>
+            <!-- Cabana 2 - Masculino -->
+            <div class="mb-3">
+                <div class="cabana-header"><i class="bi bi-house-fill"></i> Cabana 2 <span class="badge badge-masc">Masculino</span> <span class="badge bg-secondary" id="countCabana2">0</span></div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover cabana-table mt-1 mb-0">
+                        <thead class="table-light"><tr><th>Cód</th><th>Nome</th><th>Idade</th><th></th></tr></thead>
+                        <tbody id="cabana2"></tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- Cabana 6 - Feminino -->
+            <div>
+                <div class="cabana-header"><i class="bi bi-house-fill"></i> Cabana 6 <span class="badge badge-fem">Feminino</span> <span class="badge bg-secondary" id="countCabana6">0</span></div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover cabana-table mt-1 mb-0">
+                        <thead class="table-light"><tr><th>Cód</th><th>Nome</th><th>Idade</th><th></th></tr></thead>
+                        <tbody id="cabana6"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tribo 3 -->
+    <div class="col-12 col-lg-6">
+        <div class="card tribo-card tribo-3 p-3">
+            <div class="tribo-title mb-3"><i class="bi bi-flag-fill text-success"></i> Tribo 3 <small class="text-muted fw-normal">(35 a 45 anos)</small></div>
+            <!-- Cabana 3 - Masculino -->
+            <div class="mb-3">
+                <div class="cabana-header"><i class="bi bi-house-fill"></i> Cabana 3 <span class="badge badge-masc">Masculino</span> <span class="badge bg-secondary" id="countCabana3">0</span></div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover cabana-table mt-1 mb-0">
+                        <thead class="table-light"><tr><th>Cód</th><th>Nome</th><th>Idade</th><th></th></tr></thead>
+                        <tbody id="cabana3"></tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- Cabana 7 - Feminino -->
+            <div>
+                <div class="cabana-header"><i class="bi bi-house-fill"></i> Cabana 7 <span class="badge badge-fem">Feminino</span> <span class="badge bg-secondary" id="countCabana7">0</span></div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover cabana-table mt-1 mb-0">
+                        <thead class="table-light"><tr><th>Cód</th><th>Nome</th><th>Idade</th><th></th></tr></thead>
+                        <tbody id="cabana7"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tribo 4 -->
+    <div class="col-12 col-lg-6">
+        <div class="card tribo-card tribo-4 p-3">
+            <div class="tribo-title mb-3"><i class="bi bi-flag-fill text-primary"></i> Tribo 4 <small class="text-muted fw-normal">(acima de 45 anos)</small></div>
+            <!-- Cabana 4 - Masculino -->
+            <div class="mb-3">
+                <div class="cabana-header"><i class="bi bi-house-fill"></i> Cabana 4 <span class="badge badge-masc">Masculino</span> <span class="badge bg-secondary" id="countCabana4">0</span></div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover cabana-table mt-1 mb-0">
+                        <thead class="table-light"><tr><th>Cód</th><th>Nome</th><th>Idade</th><th></th></tr></thead>
+                        <tbody id="cabana4"></tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- Cabana 8 - Feminino -->
+            <div>
+                <div class="cabana-header"><i class="bi bi-house-fill"></i> Cabana 8 <span class="badge badge-fem">Feminino</span> <span class="badge bg-secondary" id="countCabana8">0</span></div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover cabana-table mt-1 mb-0">
+                        <thead class="table-light"><tr><th>Cód</th><th>Nome</th><th>Idade</th><th></th></tr></thead>
+                        <tbody id="cabana8"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Painel de Troca entre Tribos -->
+<div class="card p-4 mt-4">
+    <h5 class="mb-3"><i class="bi bi-arrow-left-right"></i> Trocar Aldeeiros entre Tribos</h5>
+    <p class="text-muted mb-3" style="font-size: 0.9rem;">
+        Use esta ferramenta para trocar dois aldeeiros de tribo. Informe os códigos de dois aldeeiros do <strong>mesmo sexo</strong> que estejam em <strong>tribos diferentes</strong>. Eles serão trocados de cabana.
+    </p>
+    <div class="row g-3 align-items-end">
+        <div class="col-6 col-md-2">
+            <label for="codigo_troca_1" class="form-label">Código 1 <span class="text-danger">*</span></label>
+            <input type="number" class="form-control" id="codigo_troca_1" min="1" placeholder="Ex: 3">
+        </div>
+        <div class="col-12 col-md-4 d-flex align-items-center justify-content-center" id="previewTroca1" style="min-height:38px;">
+            <span class="text-muted fst-italic" style="font-size:0.85rem;">—</span>
+        </div>
+        <div class="col-6 col-md-2">
+            <label for="codigo_troca_2" class="form-label">Código 2 <span class="text-danger">*</span></label>
+            <input type="number" class="form-control" id="codigo_troca_2" min="1" placeholder="Ex: 7">
+        </div>
+        <div class="col-12 col-md-4 d-flex align-items-center justify-content-center" id="previewTroca2" style="min-height:38px;">
+            <span class="text-muted fst-italic" style="font-size:0.85rem;">—</span>
+        </div>
+    </div>
+    <div class="row g-3 mt-2">
+        <div class="col-12 col-md-3">
+            <button type="button" class="btn btn-warning w-100" id="btnTrocar">
+                <i class="bi bi-arrow-left-right"></i> Trocar de Tribo
+            </button>
+        </div>
+    </div>
+    <!-- Alerta de troca -->
+    <div class="alert alert-success alert-dismissible fade d-none mt-3" id="alertTroca" role="alert">
+        <span id="alertTrocaMsg"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div class="alert alert-danger alert-dismissible fade d-none mt-3" id="alertTrocaErro" role="alert">
+        <span id="alertTrocaErroMsg"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+</div>
+
+<!-- Botão Gerar PDF -->
+<div class="text-center mt-4 mb-4">
+    <button type="button" class="btn btn-danger btn-lg" id="btnGerarPDF">
+        <i class="bi bi-file-earmark-pdf"></i> Gerar PDF das Cabanas
+    </button>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script>
+(function() {
+    let codigoGlobal = 0;
+
+    const btnAdicionar = document.getElementById('btnAdicionar');
+    const TODAS_CABANAS = [1, 2, 3, 4, 5, 6, 7, 8];
+    const nomesTribo = {
+        1: 'Tribo 1 (Cabana 1)', 2: 'Tribo 2 (Cabana 2)', 3: 'Tribo 3 (Cabana 3)', 4: 'Tribo 4 (Cabana 4)',
+        5: 'Tribo 1 (Cabana 5)', 6: 'Tribo 2 (Cabana 6)', 7: 'Tribo 3 (Cabana 7)', 8: 'Tribo 4 (Cabana 8)'
+    };
+
+    // Aldeias que exigem idade >= 19
+    const aldeiasIdadeMinima19 = ['aprofundamento', 'recomeço', 'recomeco', 'aliança', 'alianca', 'crescimento'];
+
+    function isAldeiaComIdadeMinima() {
+        const select = document.getElementById('tipo_aldeia');
+        if (!select.value) return false;
+        const texto = select.options[select.selectedIndex].text.toLowerCase();
+        return aldeiasIdadeMinima19.some(function(tipo) { return texto.indexOf(tipo) !== -1; });
+    }
+
+    // Habilitar/desabilitar campos ao selecionar tipo de aldeia
+    document.getElementById('tipo_aldeia').addEventListener('change', function() {
+        const selecionado = !!this.value;
+        document.getElementById('nome_completo').disabled = !selecionado;
+        document.getElementById('sexo').disabled = !selecionado;
+        document.getElementById('idade').disabled = !selecionado;
+        btnAdicionar.disabled = !selecionado;
+
+        if (!selecionado) {
+            document.getElementById('nome_completo').value = '';
+            document.getElementById('sexo').value = '';
+            document.getElementById('idade').value = '';
+        }
+    });
+
+    function mostrarErro(msg) {
+        const el = document.getElementById('alertErro');
+        document.getElementById('alertErroMsg').textContent = msg;
+        el.classList.remove('d-none');
+        el.classList.add('show');
+        setTimeout(() => { el.classList.remove('show'); el.classList.add('d-none'); }, 4000);
+    }
+
+    function determinarCabana(sexo, idade) {
+        // Aldeias com restrição: idade mínima 19
+        if (isAldeiaComIdadeMinima() && idade < 19) { return null; }
+
+        let tribo;
+        if (idade <= 24) { tribo = 1; }
+        else if (idade <= 34) { tribo = 2; }
+        else if (idade <= 45) { tribo = 3; }
+        else { tribo = 4; }
+        return sexo === 'M' ? tribo : tribo + 4;
+    }
+
+    function atualizarContador(cabana) {
+        const tbody = document.getElementById('cabana' + cabana);
+        document.getElementById('countCabana' + cabana).textContent = tbody.querySelectorAll('tr').length;
+    }
+
+    function removerPessoa(btn, cabana) {
+        btn.closest('tr').remove();
+        atualizarContador(cabana);
+    }
+
+    window._removerPessoa = function(btn, cabana) {
+        removerPessoa(btn, cabana);
+    };
+
+    btnAdicionar.addEventListener('click', function() {
+        const tipoAldeia = document.getElementById('tipo_aldeia').value;
+        const nome = document.getElementById('nome_completo').value.trim();
+        const sexo = document.getElementById('sexo').value;
+        const idadeVal = document.getElementById('idade').value;
+        const idade = parseInt(idadeVal);
+
+        if (!tipoAldeia) { mostrarErro('Selecione o tipo de aldeia.'); return; }
+        if (!nome) { mostrarErro('Informe o nome completo.'); return; }
+        if (!sexo) { mostrarErro('Selecione o sexo.'); return; }
+        if (!idadeVal || isNaN(idade) || idade < 1) { mostrarErro('Informe uma idade válida.'); return; }
+
+        const cabana = determinarCabana(sexo, idade);
+        if (cabana === null) {
+            mostrarErro('Para aldeias de Aprofundamento, Recomeço, Aliança e Crescimento a idade mínima é 19 anos.');
+            return;
+        }
+
+        codigoGlobal++;
+        const codigo = codigoGlobal;
+
+        const tbody = document.getElementById('cabana' + cabana);
+        const tr = document.createElement('tr');
+        tr.innerHTML =
+            '<td><strong>' + codigo + '</strong></td>' +
+            '<td>' + nome + '</td>' +
+            '<td>' + idade + '</td>' +
+            '<td><button type="button" class="btn btn-outline-danger btn-sm btn-remover" title="Remover" onclick="window._removerPessoa(this,' + cabana + ')"><i class="bi bi-trash"></i></button></td>';
+        tbody.appendChild(tr);
+        atualizarContador(cabana);
+
+        document.getElementById('nome_completo').value = '';
+        document.getElementById('idade').value = '';
+        document.getElementById('nome_completo').focus();
+    });
+
+    ['nome_completo', 'idade'].forEach(function(id) {
+        document.getElementById(id).addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') { e.preventDefault(); btnAdicionar.click(); }
+        });
+    });
+
+    // ==================== TROCA ENTRE TRIBOS ====================
+
+    function encontrarPessoaPorCodigo(codigo) {
+        for (let c of TODAS_CABANAS) {
+            const tbody = document.getElementById('cabana' + c);
+            const rows = tbody.querySelectorAll('tr');
+            for (let tr of rows) {
+                const cod = parseInt(tr.cells[0].textContent);
+                if (cod === codigo) {
+                    return { tr: tr, cabana: c, nome: tr.cells[1].textContent, idade: tr.cells[2].textContent };
+                }
+            }
+        }
+        return null;
+    }
+
+    function getSexoCabana(cabana) {
+        return cabana <= 4 ? 'M' : 'F';
+    }
+
+    function mostrarAlertaTroca(msg) {
+        const el = document.getElementById('alertTroca');
+        document.getElementById('alertTrocaMsg').textContent = msg;
+        el.classList.remove('d-none'); el.classList.add('show');
+        document.getElementById('alertTrocaErro').classList.add('d-none');
+        document.getElementById('alertTrocaErro').classList.remove('show');
+        setTimeout(() => { el.classList.remove('show'); el.classList.add('d-none'); }, 5000);
+    }
+
+    function mostrarErroTroca(msg) {
+        const el = document.getElementById('alertTrocaErro');
+        document.getElementById('alertTrocaErroMsg').textContent = msg;
+        el.classList.remove('d-none'); el.classList.add('show');
+        document.getElementById('alertTroca').classList.add('d-none');
+        document.getElementById('alertTroca').classList.remove('show');
+        setTimeout(() => { el.classList.remove('show'); el.classList.add('d-none'); }, 5000);
+    }
+
+    function atualizarPreview(inputId, previewId) {
+        const val = parseInt(document.getElementById(inputId).value);
+        const previewEl = document.getElementById(previewId);
+        if (!val || isNaN(val)) {
+            previewEl.innerHTML = '<span class="text-muted fst-italic" style="font-size:0.85rem;">—</span>';
+            return;
+        }
+        const pessoa = encontrarPessoaPorCodigo(val);
+        if (pessoa) {
+            const sexoLabel = getSexoCabana(pessoa.cabana) === 'M' ? '♂' : '♀';
+            previewEl.innerHTML = '<span class="badge bg-dark me-1">' + sexoLabel + '</span> ' +
+                '<strong>' + pessoa.nome + '</strong> <small class="text-muted">(Idade: ' + pessoa.idade + ' — ' + nomesTribo[pessoa.cabana] + ')</small>';
+        } else {
+            previewEl.innerHTML = '<span class="text-danger" style="font-size:0.85rem;"><i class="bi bi-exclamation-circle"></i> Código não encontrado</span>';
+        }
+    }
+
+    document.getElementById('codigo_troca_1').addEventListener('input', function() { atualizarPreview('codigo_troca_1', 'previewTroca1'); });
+    document.getElementById('codigo_troca_2').addEventListener('input', function() { atualizarPreview('codigo_troca_2', 'previewTroca2'); });
+
+    document.getElementById('btnTrocar').addEventListener('click', function() {
+        const cod1 = parseInt(document.getElementById('codigo_troca_1').value);
+        const cod2 = parseInt(document.getElementById('codigo_troca_2').value);
+
+        if (!cod1 || !cod2 || isNaN(cod1) || isNaN(cod2)) {
+            mostrarErroTroca('Informe os dois códigos para realizar a troca.'); return;
+        }
+        if (cod1 === cod2) {
+            mostrarErroTroca('Os códigos devem ser diferentes.'); return;
+        }
+
+        const p1 = encontrarPessoaPorCodigo(cod1);
+        const p2 = encontrarPessoaPorCodigo(cod2);
+
+        if (!p1) { mostrarErroTroca('Código ' + cod1 + ' não encontrado nas cabanas.'); return; }
+        if (!p2) { mostrarErroTroca('Código ' + cod2 + ' não encontrado nas cabanas.'); return; }
+
+        if (getSexoCabana(p1.cabana) !== getSexoCabana(p2.cabana)) {
+            mostrarErroTroca('Não é possível trocar aldeeiros de sexos diferentes. Ambos devem ser do mesmo sexo.'); return;
+        }
+        if (p1.cabana === p2.cabana) {
+            mostrarErroTroca('Ambos já estão na mesma cabana/tribo. Não há necessidade de troca.'); return;
+        }
+
+        const tbody1 = document.getElementById('cabana' + p1.cabana);
+        const tbody2 = document.getElementById('cabana' + p2.cabana);
+        const cabanaOrigem1 = p1.cabana;
+        const cabanaOrigem2 = p2.cabana;
+
+        // Atualizar onclick do botão remover
+        p1.tr.querySelector('.btn-remover').setAttribute('onclick', 'window._removerPessoa(this,' + cabanaOrigem2 + ')');
+        p2.tr.querySelector('.btn-remover').setAttribute('onclick', 'window._removerPessoa(this,' + cabanaOrigem1 + ')');
+
+        // Mover as rows
+        tbody2.appendChild(p1.tr);
+        tbody1.appendChild(p2.tr);
+
+        atualizarContador(cabanaOrigem1);
+        atualizarContador(cabanaOrigem2);
+
+        mostrarAlertaTroca('Troca realizada! ' + p1.nome + ' (Cód ' + cod1 + ') movido para ' + nomesTribo[cabanaOrigem2] + ' ↔ ' + p2.nome + ' (Cód ' + cod2 + ') movido para ' + nomesTribo[cabanaOrigem1] + '.');
+
+        document.getElementById('codigo_troca_1').value = '';
+        document.getElementById('codigo_troca_2').value = '';
+        atualizarPreview('codigo_troca_1', 'previewTroca1');
+        atualizarPreview('codigo_troca_2', 'previewTroca2');
+    });
+
+    ['codigo_troca_1', 'codigo_troca_2'].forEach(function(id) {
+        document.getElementById(id).addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') { e.preventDefault(); document.getElementById('btnTrocar').click(); }
+        });
+    });
+
+    // ==================== GERAR PDF ====================
+
+    const nomesCabana = {
+        1: 'Cabana 1 (Masculino)', 2: 'Cabana 2 (Masculino)',
+        3: 'Cabana 3 (Masculino)', 4: 'Cabana 4 (Masculino)',
+        5: 'Cabana 5 (Feminino)', 6: 'Cabana 6 (Feminino)',
+        7: 'Cabana 7 (Feminino)', 8: 'Cabana 8 (Feminino)'
+    };
+
+    function obterDadosCabana(cabana) {
+        const tbody = document.getElementById('cabana' + cabana);
+        const rows = tbody.querySelectorAll('tr');
+        const dados = [];
+        rows.forEach(function(tr) {
+            dados.push([tr.cells[1].textContent]);
+        });
+        return dados;
+    }
+
+    document.getElementById('btnGerarPDF').addEventListener('click', function() {
+        const select = document.getElementById('tipo_aldeia');
+        const tipoAldeiaTexto = select.options[select.selectedIndex].text;
+
+        if (!select.value) {
+            mostrarErro('Selecione o tipo de aldeia antes de gerar o PDF.');
+            return;
+        }
+
+        // Verificar se tem ao menos 1 pessoa
+        let totalPessoas = 0;
+        TODAS_CABANAS.forEach(function(c) {
+            totalPessoas += document.getElementById('cabana' + c).querySelectorAll('tr').length;
+        });
+        if (totalPessoas === 0) {
+            mostrarErro('Adicione ao menos um aldeeiro antes de gerar o PDF.');
+            return;
+        }
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('p', 'mm', 'a4');
+        const pageWidth = doc.internal.pageSize.getWidth();
+        let cursorY = 15;
+
+        // Título
+        doc.setFontSize(18);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Aldeia - ' + tipoAldeiaTexto, pageWidth / 2, cursorY, { align: 'center' });
+        cursorY += 12;
+
+        // Ordem das cabanas no PDF: 1,2,3,4,5,6,7,8
+        var ordemCabanas = [1, 2, 3, 4, 5, 6, 7, 8];
+
+        ordemCabanas.forEach(function(c) {
+            var dados = obterDadosCabana(c);
+            if (dados.length === 0) return;
+
+            // Verificar se cabe na página (header + pelo menos 1 row ~ 25mm)
+            if (cursorY + 25 > doc.internal.pageSize.getHeight() - 15) {
+                doc.addPage();
+                cursorY = 15;
+            }
+
+            // Subtítulo da cabana
+            doc.setFontSize(13);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(45, 55, 72);
+            doc.text(nomesCabana[c] + '  (' + dados.length + ' pessoas)', 14, cursorY);
+            cursorY += 2;
+
+            doc.autoTable({
+                startY: cursorY,
+                head: [['Nome']],
+                body: dados,
+                theme: 'grid',
+                headStyles: { fillColor: [45, 55, 72], fontSize: 9, fontStyle: 'bold' },
+                bodyStyles: { fontSize: 9 },
+                columnStyles: {
+                    0: { cellWidth: 'auto' }
+                },
+                margin: { left: 14, right: 14 },
+                didDrawPage: function() {}
+            });
+
+            cursorY = doc.lastAutoTable.finalY + 8;
+        });
+
+        doc.save('Cabanas_' + tipoAldeiaTexto.replace(/\s+/g, '_') + '.pdf');
+    });
+
+})();
+</script>
+{% endblock %}

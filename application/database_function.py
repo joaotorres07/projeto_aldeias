@@ -795,7 +795,7 @@ def select_equipes():
     try:
         connection = get_db_connection()
         with connection.cursor() as cursor:
-            cursor.execute("SELECT id, nome FROM db_aldeias.tb_equipes")
+            cursor.execute("SELECT id, nome, funcao FROM db_aldeias.tb_equipes")
             resultado = cursor.fetchall()
             _cache_set('equipes', resultado)
             return resultado

@@ -4,7 +4,7 @@ from io import BytesIO
 from datetime import datetime, timedelta
 from functools import wraps
 
-from flask import Flask, render_template, request, session, redirect, url_for, flash, send_file
+from flask import Flask, render_template, request, session, redirect, url_for, flash, send_file, jsonify
 from dados_function import get_dados_aldeias, decimal_serializer
 from cadastro_function import salvar_aldeeiro
 from aldeeiros_function import pesquisar_aldeeiros
@@ -12,7 +12,7 @@ from formacao_function import abrir_formacao as abrir_formacao_fn
 from presenca_function import registrar_presenca as registrar_presenca_fn
 from whatsapp_function import enviar_whatsapp as enviar_whatsapp_fn
 from auth_functions import login as auth_login, cadastrar_usuario_fn as cadastrar_usuario, solicitar_recuperacao, confirmar_recuperacao
-from download_s3_function import gerar_url_download, listar_arquivos
+from download_s3_function import download_arquivo_s3, listar_arquivos
 from entrevista_function import gerar_pdf_entrevista, gerar_pdf_ficha_visitacao
 
 from database_function import (
@@ -90,6 +90,13 @@ def root():
     if session.get('usuario_id'):
         return redirect(url_for('index'))
     return redirect(url_for('login_page'))
+
+
+@application.route("/keepalive", methods=["GET"])
+@login_required
+def keepalive():
+    session['last_activity'] = datetime.utcnow().isoformat()
+    return json.dumps({"status": "ok"}), 200, {"Content-Type": "application/json"}
 
 
 # ==================== AUTH ====================
@@ -494,13 +501,9 @@ def api_formacoes_por_nucleo():
 @application.route("/arquivos", methods=["GET"])
 @login_required
 def arquivos_informativos():
-    equipes_config = [
-        {"nome": "Banda", "pasta": "banda"},
-        {"nome": "Cozinha", "pasta": "cozinha"},
-        {"nome": "Liderança / Mediadores", "pasta": "lideranca-mediadores"},
-    ]
-
-    equipes = []
+    response = get_dados_aldeias()
+    dados = json.loads(response["body"])
+    equipes = sorted(dados.get("equipes", []), key=lambda e: e.get("nome", ""))
     return render_template("arquivos_informativos.html", equipes=equipes)
 
 
@@ -509,17 +512,19 @@ def arquivos_informativos():
 def download_arquivo():
     s3_key = request.args.get("s3_key")
     if not s3_key:
-        flash("Arquivo não informado.", "error")
-        return redirect(url_for('arquivos_informativos'))
+        return jsonify({"error": "Arquivo não informado."}), 400
 
-    result = gerar_url_download(s3_key)
+    result = download_arquivo_s3(s3_key)
     if result["statusCode"] == 200:
-        data = json.loads(result["body"])
-        return redirect(data["url"])
+        return send_file(
+            result["buffer"],
+            download_name=result["nome_arquivo"],
+            as_attachment=True,
+            mimetype=result["content_type"]
+        )
     else:
         erro = json.loads(result["body"]).get("error", "Erro ao baixar arquivo.")
-        flash(erro, "error")
-        return redirect(url_for('arquivos_informativos'))
+        return jsonify({"error": erro}), result["statusCode"]
 
 
 # ==================== WHATSAPP ====================
@@ -872,6 +877,17 @@ def cadastrar_nucleo_route():
             flash(f"Erro ao salvar núcleo: {str(e)}", "error")
 
     return redirect(url_for('gerenciar_perfis'))
+
+
+# ==================== ORGANIZAR CABANAS ====================
+
+@application.route("/cabanas/organizar", methods=["GET"])
+@login_required
+def organizar_cabanas():
+    response = get_dados_aldeias()
+    dados = json.loads(response["body"])
+    aldeias = dados.get("aldeias_fez", [])
+    return render_template("organizar_cabanas.html", aldeias=aldeias)
 
 
 # ==================== EXPORTAR XLSX ====================

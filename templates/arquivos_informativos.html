@@ -1,52 +1,259 @@
 {% extends "base.html" %}
 {% block title %}Arquivos e Informativos - Aldeias{% endblock %}
-{% block content %}
-<h2 class="mb-4"><i class="bi bi-folder2-open"></i> Arquivos e Informativos</h2>
 
-{% for equipe in equipes %}
-<div class="card p-4 mb-4">
-    <h4 class="mb-3">
-        {% if equipe.nome == 'Banda' %}
-            <i class="bi bi-music-note-beamed text-primary"></i>
-        {% elif equipe.nome == 'Cozinha' %}
-            <i class="bi bi-cup-hot text-warning"></i>
-        {% else %}
-            <i class="bi bi-people-fill text-success"></i>
-        {% endif %}
-        {{ equipe.nome }}
-    </h4>
-
-    {% if equipe.arquivos|length > 0 %}
-    <div class="table-responsive">
-        <table class="table table-hover mb-0">
-            <thead class="table-light">
-                <tr>
-                    <th>Arquivo</th>
-                    <th>Tamanho</th>
-                    <th>Última Modificação</th>
-                    <th class="text-center">Ação</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for arq in equipe.arquivos %}
-                <tr>
-                    <td><i class="bi bi-file-earmark"></i> {{ arq.nome }}</td>
-                    <td>{{ arq.tamanho_formatado }}</td>
-                    <td>{{ arq.ultima_modificacao }}</td>
-                    <td class="text-center">
-                        <a href="/arquivos/download?s3_key={{ arq.s3_key|urlencode }}" class="btn btn-sm btn-outline-primary" target="_blank">
-                            <i class="bi bi-download"></i> Baixar
-                        </a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% else %}
-    <div class="text-muted"><i class="bi bi-info-circle"></i> Nenhum arquivo disponível para esta equipe.</div>
-    {% endif %}
-</div>
-{% endfor %}
+{% block extra_css %}
+<style>
+    .equipe-card { border-left: 4px solid; border-radius: 10px; }
+    .equipe-title { font-weight: 700; font-size: 1.1rem; cursor: pointer; }
+    .equipe-title:hover { opacity: 0.85; }
+    .equipe-body { font-size: 0.9rem; }
+    .equipe-body ul { margin-bottom: 0.5rem; }
+    .equipe-body li { margin-bottom: 0.25rem; }
+    .equipe-body h6 { font-weight: 600; font-size: 0.95rem; margin-top: 0.8rem; }
+    .btn-download { cursor: pointer; }
+    .btn-download.disabled { pointer-events: none; opacity: 0.6; }
+</style>
 {% endblock %}
 
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-folder2-open"></i> Arquivos e Informativos</h2>
+<p class="text-muted mb-4">Informações sobre cada equipe de serviço. Clique no título da equipe para expandir ou recolher.</p>
+
+<!-- Alerta de erro de download -->
+<div class="alert alert-danger alert-dismissible fade d-none" id="alertDownloadErro" role="alert">
+    <span id="alertDownloadErroMsg"></span>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+
+{% set cores = ['#5a67d8', '#dd6b20', '#38a169', '#d53f8c', '#319795', '#805ad5', '#e53e3e', '#2b6cb0', '#d69e2e', '#c05621', '#2d3748', '#e53e3e'] %}
+{% set icones = {
+    'banda': 'bi-music-note-beamed',
+    'cozinha': 'bi-cup-hot',
+    'liderança': 'bi-star',
+    'lideranca': 'bi-star',
+    'louvor': 'bi-mic',
+    'mediadores': 'bi-people-fill',
+    'mediador': 'bi-people-fill',
+    'secretaria': 'bi-clipboard-data',
+    'teatro': 'bi-mask',
+    'vigília': 'bi-moon-stars',
+    'vigilia': 'bi-moon-stars',
+    'liturgia': 'bi-book',
+    'apoio': 'bi-hand-thumbs-up',
+    'ornamentação': 'bi-flower1',
+    'ornamentacao': 'bi-flower1',
+    'transporte': 'bi-truck',
+    'saúde': 'bi-heart-pulse',
+    'saude': 'bi-heart-pulse',
+    'palestra': 'bi-megaphone',
+    'oração': 'bi-pray',
+    'oracao': 'bi-pray',
+    'pequeno': 'bi-mask',
+    'gesto': 'bi-mask',
+    'pg': 'bi-mask',
+    'serviço': 'bi-tools',
+    'servico': 'bi-tools',
+    'geral': 'bi-tools',
+    'virgil': 'bi-moon-stars',
+    'virgíl': 'bi-moon-stars',
+    'conexão': 'bi-wifi',
+    'conexao': 'bi-wifi',
+    'conselheiro': 'bi-mortarboard',
+    'conselheir': 'bi-mortarboard',
+    'dirigente': 'bi-compass',
+    'externa': 'bi-truck',
+    'médica': 'bi-heart-pulse',
+    'medica': 'bi-heart-pulse',
+    'segurança': 'bi-shield-lock',
+    'seguranca': 'bi-shield-lock',
+    'visitação': 'bi-house-door',
+    'visitacao': 'bi-house-door',
+    'guardião': 'bi-shield-check',
+    'guardiao': 'bi-shield-check'
+} %}
+
+{% for equipe in equipes %}
+{% set nome_lower = equipe.nome|lower %}
+{% set cor = cores[loop.index0 % cores|length] %}
+{% set ns = namespace(icone='bi-folder2-open') %}
+{% for chave, valor in icones.items() %}
+    {% if chave in nome_lower %}
+        {% set ns.icone = valor %}
+    {% endif %}
+{% endfor %}
+
+<div class="card equipe-card mb-3 p-4" style="border-left-color: {{ cor }};">
+    <div class="equipe-title d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#collapseEquipe{{ equipe.id }}" aria-expanded="false">
+        <span><i class="bi {{ ns.icone }} me-2" style="color: {{ cor }};"></i> {{ equipe.nome }}</span>
+        <i class="bi bi-chevron-down"></i>
+    </div>
+    <div class="collapse" id="collapseEquipe{{ equipe.id }}">
+        <hr class="my-3">
+        <div class="equipe-body">
+            {% if equipe.funcao %}
+            <h6><i class="bi bi-briefcase"></i> Função</h6>
+            <p>{{ equipe.funcao }}</p>
+            {% endif %}
+            <p class="text-muted"><i class="bi bi-info-circle"></i> Painel da equipe <strong>{{ equipe.nome }}</strong>.</p>
+
+            {% if 'banda' in nome_lower %}
+            <hr class="my-3">
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                <strong class="me-1"><i class="bi bi-file-earmark-arrow-down"></i> Arquivos de apoio:</strong>
+                <button type="button" class="btn btn-sm btn-outline-primary btn-download" data-url="/arquivos/download?s3_key=Equipes/{{ equipe.nome }}/Roteiro Musical - Aldeia de Aprofundamento.pdf">
+                    <i class="bi bi-file-earmark-pdf"></i> Roteiro Musical - Aldeia de Aprofundamento
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-primary btn-download" data-url="/arquivos/download?s3_key=Equipes/{{ equipe.nome }}/Roteiro Musical - Aldeia de Jovens.pdf">
+                    <i class="bi bi-file-earmark-pdf"></i> Roteiro Musical - Aldeia de Jovens
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-primary btn-download" data-url="/arquivos/download?s3_key=Equipes/{{ equipe.nome }}/Roteiro Musical - Aldeia de Adolescentes.pdf">
+                    <i class="bi bi-file-earmark-pdf"></i> Roteiro Musical - Aldeia de Adolescentes
+                </button>
+            </div>
+            {% endif %}
+
+            {% if 'lideran' in nome_lower %}
+            <hr class="my-3">
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                <strong class="me-1"><i class="bi bi-file-earmark-arrow-down"></i> Arquivos de apoio:</strong>
+                <button type="button" class="btn btn-sm btn-outline-success btn-download" data-url="/arquivos/download?s3_key=Equipes/{{ equipe.nome }}/Manual do(a) Líder - Aldeia de Aprofundamento.pdf">
+                    <i class="bi bi-file-earmark-pdf"></i> Manual do(a) Líder - Aldeia de Aprofundamento
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-success btn-download" data-url="/arquivos/download?s3_key=Equipes/{{ equipe.nome }}/Manual do(a) Líder - Aldeia de Jovens.pdf">
+                    <i class="bi bi-file-earmark-pdf"></i> Manual do(a) Líder - Aldeia de Jovens
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-success btn-download" data-url="/arquivos/download?s3_key=Equipes/{{ equipe.nome }}/Manual do(a) Líder - Aldeia de Adolescentes.pdf">
+                    <i class="bi bi-file-earmark-pdf"></i> Manual do(a) Líder - Aldeia de Adolescentes
+                </button>
+            </div>
+            {% endif %}
+
+            {% if 'cozinha' in nome_lower %}
+            <hr class="my-3">
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                <strong class="me-1"><i class="bi bi-file-earmark-arrow-down"></i> Arquivos de apoio:</strong>
+                <button type="button" class="btn btn-sm btn-outline-warning text-dark btn-download" data-url="/arquivos/download?s3_key=Equipes/{{ equipe.nome }}/Planilha Cozinha.pdf">
+                    <i class="bi bi-file-earmark-pdf"></i> Planilha Cozinha
+                </button>
+            </div>
+            {% endif %}
+
+            {% if 'apoio' in nome_lower %}
+            <hr class="my-3">
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                <strong class="me-1"><i class="bi bi-file-earmark-arrow-down"></i> Arquivos de apoio:</strong>
+                <button type="button" class="btn btn-sm btn-outline-secondary btn-download" data-url="/arquivos/download?s3_key=Equipes/{{ equipe.nome }}/Materiais Apoio.pdf">
+                    <i class="bi bi-file-earmark-pdf"></i> Materiais Apoio
+                </button>
+            </div>
+            {% endif %}
+
+            {% if 'servi' in nome_lower and 'gera' in nome_lower %}
+            <hr class="my-3">
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                <strong class="me-1"><i class="bi bi-file-earmark-arrow-down"></i> Arquivos de apoio:</strong>
+                <button type="button" class="btn btn-sm btn-outline-dark btn-download" data-url="/arquivos/download?s3_key=Equipes/{{ equipe.nome }}/Materiais Serviços Gerais.pdf">
+                    <i class="bi bi-file-earmark-pdf"></i> Materiais Serviços Gerais
+                </button>
+            </div>
+            {% endif %}
+
+            {% if 'vigil' in nome_lower or 'vigíl' in nome_lower or 'virgil' in nome_lower or 'virgíl' in nome_lower %}
+            <hr class="my-3">
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                <strong class="me-1"><i class="bi bi-file-earmark-arrow-down"></i> Arquivos de apoio:</strong>
+                <button type="button" class="btn btn-sm btn-outline-primary btn-download" data-url="/arquivos/download?s3_key=Equipes/{{ equipe.nome }}/Roteiro de Oração.pdf">
+                    <i class="bi bi-file-earmark-pdf"></i> Roteiro de Oração
+                </button>
+            </div>
+            {% endif %}
+
+            {% if 'pg' in nome_lower or 'pequeno' in nome_lower or 'gesto' in nome_lower %}
+            <hr class="my-3">
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                <strong class="me-1"><i class="bi bi-file-earmark-arrow-down"></i> Arquivos de apoio:</strong>
+                <button type="button" class="btn btn-sm btn-outline-info btn-download" data-url="/arquivos/download?s3_key=Equipes/{{ equipe.nome }}/Roteiro PG - Aldeia de Aprofundamento.pdf">
+                    <i class="bi bi-file-earmark-pdf"></i> Roteiro PG - Aldeia de Aprofundamento
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-info btn-download" data-url="/arquivos/download?s3_key=Equipes/{{ equipe.nome }}/Roteiro PG - Aldeia de Jovens.pdf">
+                    <i class="bi bi-file-earmark-pdf"></i> Roteiro PG - Aldeia de Jovens
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-info btn-download" data-url="/arquivos/download?s3_key=Equipes/{{ equipe.nome }}/Roteiro PG - Aldeia de Adolescentes.pdf">
+                    <i class="bi bi-file-earmark-pdf"></i> Roteiro PG - Aldeia de Adolescentes
+                </button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{% if equipes|length == 0 %}
+<div class="alert alert-warning"><i class="bi bi-exclamation-triangle"></i> Nenhuma equipe cadastrada no sistema.</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.querySelectorAll('.equipe-title').forEach(function(title) {
+    var target = document.querySelector(title.getAttribute('data-bs-target'));
+    if (target) {
+        target.addEventListener('show.bs.collapse', function() {
+            title.querySelector('.bi-chevron-down').classList.replace('bi-chevron-down', 'bi-chevron-up');
+        });
+        target.addEventListener('hide.bs.collapse', function() {
+            title.querySelector('.bi-chevron-up').classList.replace('bi-chevron-up', 'bi-chevron-down');
+        });
+    }
+});
+
+// Download via fetch — sem sair da página
+document.querySelectorAll('.btn-download').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        var url = this.getAttribute('data-url');
+        var botao = this;
+        var textoOriginal = botao.innerHTML;
+
+        botao.classList.add('disabled');
+        botao.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Baixando...';
+
+        fetch(url, { credentials: 'same-origin' })
+            .then(function(response) {
+                if (!response.ok) {
+                    return response.json().then(function(data) {
+                        throw new Error(data.error || 'Erro ao baixar arquivo.');
+                    });
+                }
+                var filename = 'arquivo';
+                var disposition = response.headers.get('Content-Disposition');
+                if (disposition) {
+                    var match = disposition.match(/filename\*?=(?:UTF-8''|"?)([^";]+)/i);
+                    if (match) filename = decodeURIComponent(match[1].replace(/"/g, ''));
+                }
+                return response.blob().then(function(blob) {
+                    var a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(a.href);
+                });
+            })
+            .catch(function(err) {
+                var alertEl = document.getElementById('alertDownloadErro');
+                document.getElementById('alertDownloadErroMsg').textContent = err.message;
+                alertEl.classList.remove('d-none');
+                alertEl.classList.add('show');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                setTimeout(function() { alertEl.classList.remove('show'); alertEl.classList.add('d-none'); }, 6000);
+            })
+            .finally(function() {
+                botao.classList.remove('disabled');
+                botao.innerHTML = textoOriginal;
+            });
+    });
+});
+</script>
+{% endblock %}

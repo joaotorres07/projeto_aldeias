@@ -2,52 +2,58 @@ import json
 import os
 import logging
 import boto3
+from io import BytesIO
 from botocore.exceptions import ClientError
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 
-def gerar_url_download(s3_key):
+def _get_s3_client():
+    return boto3.client(
+        's3',
+        region_name=os.environ.get('AWS_REGION', 'us-east-1'),
+        aws_access_key_id=os.environ.get('AWS_ACCESS_KEY_ID'),
+        aws_secret_access_key=os.environ.get('AWS_SECRET_ACCESS_KEY')
+    )
+
+
+def download_arquivo_s3(s3_key):
     try:
         bucket = os.environ.get('S3_BUCKET_NAME', 'aldeias-arquivos')
-
         if not s3_key:
             return {
                 "statusCode": 400,
                 "body": json.dumps({"error": "Chave do arquivo (s3_key) não informada."})
             }
 
-        logger.info(f"Gerando URL de download para: {s3_key}")
-
-        s3_client = boto3.client(
-            's3',
-            region_name=os.environ.get('AWS_REGION', 'us-east-1')
-        )
-
+        logger.info(f"Baixando arquivo do S3: {s3_key}")
+        s3_client = _get_s3_client()
         try:
-            s3_client.head_object(Bucket=bucket, Key=s3_key)
+            response = s3_client.get_object(Bucket=bucket, Key=s3_key)
         except ClientError as e:
-            if e.response['Error']['Code'] == '404':
+            if e.response['Error']['Code'] == 'NoSuchKey':
                 return {
                     "statusCode": 404,
                     "body": json.dumps({"error": f"Arquivo não encontrado: {s3_key}"})
                 }
             raise
 
-        url = s3_client.generate_presigned_url(
-            'get_object',
-            Params={'Bucket': bucket, 'Key': s3_key},
-            ExpiresIn=300
-        )
+        file_content = response['Body'].read()
+        content_type = response.get('ContentType', 'application/octet-stream')
+        nome_arquivo = s3_key.split('/')[-1]
 
-        logger.info(f"URL gerada com sucesso para: {s3_key}")
+        logger.info(f"Arquivo baixado com sucesso: {nome_arquivo} ({len(file_content)} bytes)")
+        buffer = BytesIO(file_content)
+        buffer.seek(0)
         return {
             "statusCode": 200,
-            "body": json.dumps({"url": url, "arquivo": s3_key.split('/')[-1]})
+            "buffer": buffer,
+            "nome_arquivo": nome_arquivo,
+            "content_type": content_type
         }
     except Exception as e:
-        msg_error = f"Erro ao gerar URL de download: {str(e)}"
+        msg_error = f"Erro ao baixar arquivo do S3: {str(e)}"
         logger.error(msg_error)
         return {
             "statusCode": 500,
@@ -58,12 +64,9 @@ def gerar_url_download(s3_key):
 def listar_arquivos(equipe):
     try:
         bucket = os.environ.get('S3_BUCKET_NAME', 'aldeias-arquivos')
-        prefix = f"equipes/{equipe}/"
+        prefix = f"Equipes/{equipe}/"
 
-        s3_client = boto3.client(
-            's3',
-            region_name=os.environ.get('AWS_REGION', 'us-east-1')
-        )
+        s3_client = _get_s3_client()
 
         response = s3_client.list_objects_v2(Bucket=bucket, Prefix=prefix)
         arquivos = []
@@ -86,4 +89,3 @@ def listar_arquivos(equipe):
     except Exception as e:
         logger.error(f"Erro ao listar arquivos da equipe {equipe}: {str(e)}")
         return []
-

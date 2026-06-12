@@ -46,7 +46,7 @@ CREATE TABLE `tb_aldeia` (
 CREATE TABLE `tb_equipes` (
   `id` int NOT NULL AUTO_INCREMENT,
   `nome` varchar(50) NOT NULL,
-  `funcao` varchar(100) DEFAULT NULL,
+  `funcao` varchar(250) DEFAULT NULL,
   PRIMARY KEY (`id`)
 );
 
@@ -161,8 +161,22 @@ VALUES (1,'Belo Horizonte','Rua Sergipe 175, esquina com Rua dos Timbiras - Cent
 (10, 'Três Corações', '', '', 0, 'Criação inicial', CURRENT_TIMESTAMP, NULL, 'system_default');
 INSERT INTO `tb_perfil` VALUES (1,'Aldeeiro'),(2,'Formador'),(3,'Coordenador'), (4, 'Administrador'), (5, 'Fundador'), (6, 'Usuário');
 INSERT INTO `tb_aldeia` VALUES (1,'Aldeia de Aprofundamento'),(2,'Aldeia de Adolescentes'),(3,'Aldeia de Recomeço'),(4,'Aldeia de Aliança de Vida'),(5,'Aldeia de Crescimento'),(6,'Aldeia em Familia'),(7,'Aldeia de Jovens'),(8,'Aldeia da Melhor Idade'),(9,'Aldeia de Compromisso');
-INSERT INTO `tb_equipes` VALUES (1,'Banda','Musica e som'),(2,'Cozinha','Alimentação'),(3,'Liderança','Cuidar do aldeeiro'),(4,'Serviços Gerais','Montagem dos desafios e suporte na solução em eventuais problemas'),(5,'Pequenos Gestos','Organizar locais e encenações'),(6,'Apoio','Responsável pela limpeza do local da aldeia'),(7,'Mediadores','Conduzir a tribo e fazer as reflexões espirituais de cada desafio'),(8,'Virgilia','Orações antes e durante a aldeia'),(9,'Visitação','Pegar as cartas e conduzir a familia do aldeeiro para o momento final'),(10,'Guardião','Fiscalizar a aldeia para o Pe. Pedro'),(11,'Dirigente','Dirigir e conduzir toda a aldeia'),(12,'Segurança','Monitorar as entradas do local para que não ocorra acessos e saídas indevidas'),(13,'Conselheiros','Organizar a aldeia antes e durante e após fazer todos os relatórios'),(14,'Externa','Sair da aldeia para comprar/buscar materiais ou qualquer serviço necessário');
-
+INSERT INTO `tb_equipes` VALUES (1,'Banda','Responsável pela música e o sistema de som durante a aldeia.'),
+(2,'Cozinha','Respónsavel por preparar os alimentos de todos na aldeia, bem como a limpeza do local da equipe.'),
+(3,'Liderança','Cuidar do aldeeiro, guia-lo(a) entre os momentos e atender suas necessidades como remedios.'),
+(4,'Serviços Gerais','Montagem dos desafios e suporte na solução em eventuais problemas durante a aldeia, como por exemplo trocar uma lâmpada que queimou.'),
+(5,'Pequenos Gestos','Organizar locais onde ancontecerão os momentos da aldeias e as encenações como por exemplo o PG da fámilia'),
+(6,'Apoio','Responsável pela limpeza do local da aldeia.'),
+(7,'Mediadores','Conduzir a tribo e fazer as reflexões espirituais a cada momento da aldeia.'),
+(8,'Virgilia','Respónsavel pelas orações antes e durante a aldeia.'),
+(9,'Visitação','Pegar as cartas e conduzir a familia do aldeeiro para o momento final da aldeia.'),
+(10,'Guardião','Fiscalizar a aldeia para o Pe. Pedro.'),
+(11,'Dirigente','Dirigir e conduzir toda a aldeia.'),
+(12,'Segurança','Monitorar as entradas do local para que não ocorra acessos e saídas indevidas.'),
+(13,'Conselheiros','Organizar toda a aldeia. Antes: Montar equipes e organização do local, Durante: Ajudar cada equipe a desempenhar seu papel e agir junto ao Guardião em eventuais problemas, Após: Fazer relatório e análise de tudo o que aconteceu na aldeia.'),
+(14,'Externa','Sair da aldeia para comprar/buscar materiais ou qualquer serviço necessário.'),
+(15, 'Conexão', 'Tirar fotos dos momentos permitidos para recordação dos aldeeiros e equipes de serviço.'),
+(16, 'Médica', 'Prestar atendimento médico e primeiros socorros a alguem que tenha qualquer problema de saúde durante a aldeia');
 -- Índices
 CREATE INDEX idx_aldeeiro_nome ON tb_aldeeiro (nome);
 CREATE INDEX idx_aldeeiro_cidade_uf ON tb_aldeeiro (cidade, uf);
