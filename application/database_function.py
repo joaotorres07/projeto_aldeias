@@ -432,7 +432,7 @@ def relatorio_presenca_db(nucleo, data_inicio=None, data_fim=None, zero_presenca
 
             sql = f"""
                 SELECT a.nome,
-                       COUNT(DISTINCT fa.id) AS total_formacoes,
+                       COUNT(DISTINCT f.id) AS total_formacoes,
                        MAX(f.data_formacao) AS ultima_presenca
                 FROM db_aldeias.tb_aldeeiro a
                 LEFT JOIN db_aldeias.tb_frequencia_aldeeiro fa ON fa.cpf_aldeeiro = a.cpf

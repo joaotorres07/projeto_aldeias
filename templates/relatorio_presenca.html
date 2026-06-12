@@ -65,8 +65,9 @@
 {% if resultados is not none %}
     {% if resultados|length > 0 %}
     <div class="alert alert-primary mb-3">
-        <i class="bi bi-bar-chart"></i> <strong>Número de formações realizadas no núcleo para o período informado:</strong>
+        <i class="bi bi-bar-chart"></i> <strong>Formações realizadas no núcleo (período):</strong>
         <span class="badge bg-primary fs-6 ms-2">{{ total_formacoes_nucleo }}</span>
+        <br><small class="text-muted"><i class="bi bi-info-circle"></i> A coluna "Formações Presentes" inclui presenças em formações de qualquer núcleo.</small>
     </div>
     <div class="card p-4">
         <div class="mb-3 text-end">
